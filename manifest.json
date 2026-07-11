@@ -1,0 +1,17 @@
+{
+  "name": "Magyar Iskolai Kvízek – Matematika",
+  "short_name": "Matek",
+  "description": "Ingyenes, offline is működő matematika gyakorló kvízek általános iskolásoknak (3–8. osztály), középiskolásoknak (9–12. osztály) és érettségizőknek (közép- és emelt szint).",
+  "lang": "hu",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f3ee",
+  "theme_color": "#2d6a4f",
+  "icons": [
+    { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "favicon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "apple-touch-icon.png", "type": "image/png", "sizes": "180x180", "purpose": "any" }
+  ]
+}

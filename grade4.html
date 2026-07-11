@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, interactive-widget=resizes-content">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2d6a4f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1411" media="(prefers-color-scheme: dark)">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+  }
+</script>
+<title>4. osztály – Matematika</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ee;--surface:#fff;--border:#e0ddd5;
+  --text:#1a1916;--muted:#7a7870;
+  --accent:#2d6a4f;--accent-bg:#e8f4ef;
+  --ok:#166534;--ok-bg:#dcfce7;--ok-bd:#bbf7d0;
+  --err:#991b1b;--err-bg:#fee2e2;--err-bd:#fecaca;
+  --r:12px;--f:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
+}
+html,body{height:100%}
+body{font-family:var(--f);background:var(--bg);color:var(--text);
+     display:flex;align-items:flex-start;justify-content:center;padding:1.25rem 1rem}
+.shell{width:100%;max-width:440px}
+.screen{display:none;flex-direction:column;gap:.85rem}
+.screen.active{display:flex}
+
+/* ── settings ── */
+.app-title{font-size:22px;font-weight:600;letter-spacing:-.3px}
+.app-sub{font-size:14px;color:var(--muted);margin-top:.2rem;margin-bottom:.5rem}
+
+.row-btn{display:flex;align-items:center;justify-content:space-between;
+         padding:13px 16px;background:var(--surface);border:1.5px solid var(--border);
+         border-radius:var(--r);cursor:pointer;font-family:var(--f);color:var(--text);
+         transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;
+         text-align:left}
+.row-btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.row-title{font-size:15px;font-weight:500}
+.row-sub{font-size:13px;opacity:.65;margin-top:.15rem}
+.row-check{font-size:17px;flex-shrink:0;margin-left:12px}
+
+/* ── shared button ── */
+.btn{display:flex;align-items:center;justify-content:center;
+     width:100%;padding:15px;background:var(--surface);border:1.5px solid var(--border);
+     border-radius:var(--r);font-size:16px;font-weight:500;font-family:var(--f);
+     color:var(--text);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn:active{background:var(--border)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+
+/* ── progress ── */
+.progress-row{display:flex;align-items:center;gap:10px}
+.progress-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .35s}
+.progress-label{font-size:13px;color:var(--muted);min-width:36px;text-align:right}
+
+/* ── question card ── */
+.q-card{background:var(--surface);border:1.5px solid var(--border);
+        border-radius:var(--r);padding:1.2rem 1.25rem;text-align:center}
+.q-source{font-size:32px;font-weight:600;letter-spacing:-.5px;line-height:1.2}
+.q-word{font-size:15.5px;line-height:1.65;text-align:left;color:var(--text);padding:.1rem 0}
+.geo-label{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+           color:var(--muted);margin-bottom:.15rem}
+.geo-given{font-size:16px;font-weight:500;color:var(--text);margin-bottom:.1rem}
+.q-arrow{font-size:18px;color:var(--muted);margin:.3rem 0}
+.q-target{font-size:21px;color:var(--muted)}
+
+/* ── viz ── */
+#viz-tog{display:none;font-size:12px;color:var(--muted);background:none;border:none;
+         cursor:pointer;font-family:var(--f);padding:2px 4px;margin:0 auto .1rem;
+         -webkit-tap-highlight-color:transparent;opacity:.75}
+#viz-tog:hover{opacity:1}
+#q-viz svg{display:block;margin:.3rem auto 0;max-height:128px;width:100%;max-width:280px}
+
+/* ── input ── */
+.input-row{display:flex;gap:8px}
+.answer-input{flex:1;height:52px;padding:0 14px;font-size:22px;font-family:var(--f);
+              background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
+              color:var(--text);outline:none;transition:border-color .15s}
+.answer-input:focus{border-color:var(--accent)}
+.ok-btn{height:52px;width:64px;flex-shrink:0;background:var(--accent);color:#fff;border:none;
+        border-radius:var(--r);font-size:18px;font-weight:600;font-family:var(--f);
+        cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ok-btn:active{opacity:.85}
+
+/* ── feedback ── */
+.feedback{padding:13px 16px;border-radius:var(--r);font-size:15px;font-weight:500;
+          display:flex;align-items:center;gap:10px}
+.feedback.ok {background:var(--ok-bg); color:var(--ok); border:1px solid var(--ok-bd)}
+.feedback.err{background:var(--err-bg);color:var(--err);border:1px solid var(--err-bd)}
+.score-mini{font-size:13px;color:var(--muted);text-align:center}
+
+/* ── result ── */
+.result-center{text-align:center;padding:1rem 0}
+.result-medal{font-size:56px;margin-bottom:.75rem}
+.result-score{font-size:28px;font-weight:600}
+.result-pct{font-size:16px;color:var(--muted);margin-top:.25rem}
+
+/* ── keyboard compact ── */
+body.kb .q-card{padding:.55rem 1rem}
+body.kb .q-source{font-size:24px}
+body.kb .geo-label{font-size:11px}
+body.kb .geo-given{font-size:14px}
+body.kb #q-viz svg{max-height:88px}
+body.kb .q-arrow{font-size:14px;margin:.05rem 0}
+body.kb .q-target{font-size:17px}
+body.kb .answer-input{height:44px;font-size:18px}
+body.kb .ok-btn{height:44px}
+body.kb .feedback{padding:9px 13px;font-size:14px}
+body.kb .score-mini{display:none}
+body.kb .screen{gap:.5rem}
+
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1a1916;--surface:#252420;--border:#3a3835;--text:#f0ede8;--muted:#8a8780;
+        --accent:#4ade80;--accent-bg:#14301f;--ok:#4ade80;--ok-bg:#14301f;--ok-bd:#166534;
+        --err:#f87171;--err-bg:#2d0f0f;--err-bd:#7f1d1d}
+  .ok-btn{background:#166534}
+}
+
+/* ── print support QR (screen: hidden) ── */
+.print-support{display:none}
+
+/* ── print styles ── */
+#print-area { display: none; }
+@media print {
+  @page { margin: 1.5cm; }
+  body { background: #fff; padding: 0; display: block; }
+  .shell { display: none !important; }
+  #print-area { 
+    display: block !important; 
+    color: #000; 
+    font-family: var(--f);
+  }
+  .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+  .print-meta { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 25px; 
+    font-size: 14px; 
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 12px; 
+  }
+  .print-grid { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 1.25rem 2rem; 
+  }
+  .print-item { 
+    break-inside: avoid; 
+    border-left: 2px solid #f0f0f0; 
+    padding-left: 14px; 
+    padding-bottom: 8px;
+  }
+  .print-item.wide { grid-column: 1 / -1; }
+  .print-num { font-weight: 700; margin-bottom: 6px; color: #888; font-size: 12px; text-transform: uppercase; }
+  .print-text { font-size: 15px; line-height: 1.45; color: #000; }
+  .print-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #666; margin-bottom: 3px; }
+  .print-given { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .print-target { font-size: 16px; margin-top: 10px; font-weight: 500; }
+  .print-viz { margin: 8px 0; }
+  .print-viz svg { max-width: 100%; height: auto; max-height: 120px; display: block; }
+  
+  /* Support QR codes — only visible in print */
+  .print-support { display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee; }
+  .print-support-item { text-align: center; font-size: 12px; color: #666; }
+  .print-support-item img { width: 72px; height: 72px; display: block; margin: 0 auto 4px; }
+  :root { 
+    --text: #000; 
+    --muted: #666; 
+    --accent: #000; 
+    --border: #ddd; 
+    --accent-bg: transparent;
+  }
+  svg text { fill: #000 !important; font-weight: 600 !important; }
+  svg line, svg path, svg rect, svg polygon { stroke: #000 !important; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SETTINGS -->
+  <div class="screen active" id="screen-settings">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div>
+        <div class="app-title">🧮 Matek kvíz</div>
+        <div class="app-sub">4. osztályos feladatok</div>
+      </div>
+      <a href="index.html" style="font-size:14px;font-weight:500;color:var(--muted);text-decoration:none;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← Főoldal</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px" id="group-list"></div>
+    <div class="btn-row">
+      <button class="btn" id="start-btn" onclick="startQuiz()">Kezdjük! →</button>
+      <button class="btn" id="print-btn" onclick="printWorksheet()">Nyomtatás (PDF)</button>
+    </div>
+
+    <!-- Answer key lookup -->
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="code-input" type="text" placeholder="Kód (pl. A3F7B-3F)"
+             style="flex:1;height:44px;padding:0 12px;font-size:15px;font-family:var(--f);
+                    background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
+                    color:var(--text);outline:none;transition:border-color .15s;letter-spacing:.05em"
+             maxlength="8"
+             oninput="this.value=this.value.toUpperCase()"
+             onkeydown="if(event.key==='Enter')solveFromCode()"/>
+      <button class="btn" style="width:auto;padding:0 18px;height:44px;flex-shrink:0"
+              onclick="solveFromCode()">Megoldások</button>
+    </div>
+    <div id="answer-key" style="display:none;background:var(--surface);border:1.5px solid var(--border);
+         border-radius:var(--r);padding:14px 16px;font-size:14px;line-height:1.9"></div>
+    <div id="support-links" style="text-align:center;font-size:13px;color:var(--muted)">
+      <a href="https://buymeacoffee.com/huvagoc" target="_blank" rel="noopener"
+         style="color:var(--muted);text-decoration:none;opacity:.7">☕ Buy me a coffee</a>
+      <span style="opacity:.4"> · </span>
+      <a href="https://revolut.me/huvagoc" target="_blank" rel="noopener"
+         style="color:var(--muted);text-decoration:none;opacity:.7">💸 Revolut</a>
+      <span style="opacity:.4"> · </span>
+      <a href="mailto:matek-kviz@pm.me"
+         style="color:var(--muted);text-decoration:none;opacity:.7">✉️ Visszajelzés</a>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);opacity:.5;margin-top:8px">
+      © 2026 Vágó Csaba –
+      <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener"
+         style="color:inherit;text-decoration:underline">CC BY-NC 4.0</a>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">1/20</div>
+    </div>
+    <div class="q-card">
+      <div id="q-top"></div>
+      <div id="q-viz"></div>
+      <button id="viz-tog" onclick="toggleViz()" style="display:none"></button>
+      <div class="q-arrow" id="q-arrow"></div>
+      <div class="q-target" id="q-target"></div>
+    </div>
+    <div class="input-row" id="input-row">
+      <input class="answer-input" id="answer-input" type="text" inputmode="decimal"
+             placeholder="Válasz…" onkeydown="handleKey(event)" autocomplete="off"/>
+      <button class="ok-btn" onclick="submitAnswer()">OK</button>
+    </div>
+    <div class="feedback" id="feedback" style="display:none"></div>
+    <button class="btn" id="next-btn" style="display:none" onclick="nextQuestion()">Következő →</button>
+    <div class="score-mini" id="score-mini"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="result-center">
+      <div class="result-medal" id="result-medal"></div>
+      <div class="result-score" id="result-score"></div>
+      <div class="result-pct"   id="result-pct"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="startQuiz()">Újra</button>
+      <button class="btn" onclick="showScreen('settings')">Beállítások</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- HIDDEN PRINT AREA -->
+<div id="print-area"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  CONVERSION DATA
+// ═══════════════════════════════════════════════════════
+const CONV_UNITS={
+  Hosszúság:{mm:1,cm:10,dm:100,m:1000,km:1e6},
+  Tömeg:{g:1,dkg:10,kg:1000},
+  Űrtartalom:{dl:1,l:10},
+  Idő:{perc:1,'óra':60,nap:1440},
+};
+const SINGLE={
+  Hosszúság:[['mm','cm'],['cm','dm'],['dm','m'],['m','km']],
+  Tömeg:[['g','dkg'],['dkg','kg']],
+  Űrtartalom:[['dl','l']],
+  Idő:[['perc','óra'],['óra','nap']],
+};
+const DOUBLE={
+  Hosszúság:[['mm','dm'],['cm','m'],['dm','km']],
+  Tömeg:[['g','kg']],
+  Űrtartalom:[],
+  Idő:[['perc','nap']],
+};
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════════
+function niceStr(v){
+  if(Math.abs(v-Math.round(v))<1e-9)return String(Math.round(v));
+  const r1=Math.round(v*10)/10; if(Math.abs(v-r1)<1e-9)return r1.toFixed(1).replace('.',',');
+  const r2=Math.round(v*100)/100; if(Math.abs(v-r2)<1e-9)return r2.toFixed(2).replace('.',',');
+  return null;
+}
+function parseNum(s){return parseFloat(String(s).trim().replace(',','.'))}
+
+// ── fraction helpers ──────────────────────────────────
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
+function lcm(a,b){return Math.abs(a*b)/gcd(a,b);}
+// Parse "a/b", "a", or "n a/b" (mixed number) → {n,d} or null
+function parseFrac(s){
+  s=String(s).trim();
+  const mx=s.match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
+  if(mx){const w=parseInt(mx[1]),n=parseInt(mx[2]),d=parseInt(mx[3]);if(d===0)return null;return{n:w*d+n,d};}
+  const fx=s.match(/^(-?\d+)\/(\d+)$/);
+  if(fx){const n=parseInt(fx[1]),d=parseInt(fx[2]);if(d===0)return null;return{n,d};}
+  const iv=parseInt(s);if(!isNaN(iv))return{n:iv,d:1};
+  return null;
+}
+function reduceFrac(n,d){if(d<0){n=-n;d=-d;}const g=gcd(Math.abs(n),d);return{n:n/g,d:d/g};}
+function fmtFrac(n,d){return d===1?String(n):`${n}/${d}`;}
+function fracEq(n1,d1,n2,d2){return n1*d2===n2*d1;}
+// Returns 'exact' | 'unsimplified' | 'wrong'
+function checkFracAnswer(raw,ansN,ansD){
+  const s=String(raw).trim();
+  let un,ud;
+  const mx=s.match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
+  if(mx){const w=parseInt(mx[1]),n=parseInt(mx[2]),d=parseInt(mx[3]);if(d===0)return'wrong';un=w*d+n;ud=d;}
+  else{const fx=s.match(/^(-?\d+)\/(\d+)$/);
+    if(fx){un=parseInt(fx[1]);ud=parseInt(fx[2]);if(ud===0)return'wrong';}
+    else{const iv=parseInt(s);if(!isNaN(iv)){un=iv;ud=1;}else return'wrong';}}
+  if(!fracEq(un,ud,ansN,ansD))return'wrong';
+  if(gcd(Math.abs(un),ud)===1)return'exact';
+  return'unsimplified';
+}
+
+// ── seeded PRNG (xorshift32) ──────────────────────────
+let _seed=1;
+function _rng(){_seed^=_seed<<13;_seed^=_seed>>17;_seed^=_seed<<5;return((_seed>>>0)/4294967296)}
+function randInt(a,b){return a+Math.floor(_rng()*(b-a+1))}
+function randChoice(a){return a[0|_rng()*a.length]}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|_rng()*(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
+
+// ── seed encode/decode ────────────────────────────────
+// Code format: "A3F7-2"  (4 hex seed digits + hyphen + 1 hex category bitmask)
+// GROUPS order is fixed; bit 0 = GROUPS[0], bit 5 = GROUPS[5]
+function encodeWorksheetCode(seed16,activeGroupsSet){
+  let mask=0;
+  GROUPS.forEach((g,i)=>{if(activeGroupsSet.has(g.id))mask|=(1<<i);});
+  const s=seed16.toString(16).toUpperCase().padStart(5,'0');
+  const m=mask.toString(16).toUpperCase().padStart(2,'0');
+  return`${s}-${m}`;
+}
+function decodeWorksheetCode(code){
+  const m=code.trim().toUpperCase().match(/^([0-9A-F]{5})-([0-9A-F]{2})$/);
+  if(!m)return null;
+  const seed=parseInt(m[1],16);
+  const mask=parseInt(m[2],16);
+  const groups=new Set();
+  GROUPS.forEach((g,i)=>{if(mask&(1<<i))groups.add(g.id);});
+  if(!groups.size)return null;
+  return{seed,groups};
+}
+
+const TIME_NEXT={nap:['óra',24],'óra':['perc',60]};
+function fmtTime(v,unit){
+  const w=Math.floor(v),f=Math.round((v-w)*1e6)/1e6;
+  if(f<1e-6)return`${w} ${unit}`;
+  const[nu,m]=TIME_NEXT[unit]||[]; if(!nu)return niceStr(v)+' '+unit;
+  const sub=Math.round(f*m);
+  return w>0?`${w} ${unit} ${sub} ${nu}`:`${sub} ${nu}`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SVG HELPERS
+// ═══════════════════════════════════════════════════════
+const VW=280,VH=168;
+
+function svgWrap(body){
+  return`<svg viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg">${body}</svg>`;
+}
+
+// text label; unknown=true → green+bold
+function T(x,y,txt,unk,anchor){
+  anchor=anchor||'middle';
+  const fill=unk?'var(--accent)':'var(--text)';
+  const fw=unk?700:500;
+  return`<text x="${+x.toFixed(1)}" y="${+y.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="central" font-size="13" fill="${fill}" font-weight="${fw}">${txt}</text>`;
+}
+
+// right-angle square at corner; pos = tl/tr/br/bl
+function RA(x,y,pos,s){
+  s=s||8;
+  const d={
+    tl:`M${x+s},${y} L${x+s},${y+s} L${x},${y+s}`,
+    tr:`M${x-s},${y} L${x-s},${y+s} L${x},${y+s}`,
+    br:`M${x-s},${y} L${x-s},${y-s} L${x},${y-s}`,
+    bl:`M${x+s},${y} L${x+s},${y-s} L${x},${y-s}`,
+  }[pos];
+  return`<path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1.1"/>`;
+}
+
+// tick mark perpendicular to segment [p1,p2] at midpoint
+function TICK(p1,p2){
+  const mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2;
+  const dx=p2[0]-p1[0],dy=p2[1]-p1[1],len=Math.sqrt(dx*dx+dy*dy);
+  const px=-dy/len*5,py=dx/len*5;
+  return`<line x1="${(mx+px).toFixed(1)}" y1="${(my+py).toFixed(1)}" x2="${(mx-px).toFixed(1)}" y2="${(my-py).toFixed(1)}" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round"/>`;
+}
+
+// outward unit normal of edge p1→p2, away from opposite vertex p3
+function outN(p1,p2,p3){
+  const dx=p2[0]-p1[0],dy=p2[1]-p1[1],len=Math.sqrt(dx*dx+dy*dy);
+  const n=[-dy/len,dx/len];
+  const mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2;
+  return(n[0]*(mx-p3[0])+n[1]*(my-p3[1]))>0?n:[-n[0],-n[1]];
+}
+
+// label on outside of triangle edge, variable name + value
+function edgeLbl(p1,p2,p3,varName,val,off){
+  off=off||24;
+  const unk=val==='?';
+  const mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2;
+  const[nx,ny]=outN(p1,p2,p3);
+  return T(mx+nx*off,my+ny*off,`${varName} = ${val}`,unk);
+}
+
+// ── shapes ────────────────────────────────────────────
+
+function vizSquare(aLbl,inside){
+  const sz=100,x0=(VW-sz)/2,y0=14,cx=x0+sz/2,cy=y0+sz/2;
+  const unkA=aLbl==='?',unkIn=inside&&inside.includes('?');
+  const fill='rgba(45,106,79,0.09)';
+  return svgWrap(
+    `<rect x="${x0}" y="${y0}" width="${sz}" height="${sz}" fill="${fill}" stroke="var(--text)" stroke-width="2"/>`+
+    RA(x0,y0,'tl')+RA(x0+sz,y0,'tr')+RA(x0+sz,y0+sz,'br')+RA(x0,y0+sz,'bl')+
+    TICK([x0,y0],[x0+sz,y0])+TICK([x0+sz,y0],[x0+sz,y0+sz])+
+    TICK([x0+sz,y0+sz],[x0,y0+sz])+TICK([x0,y0+sz],[x0,y0])+
+    T(cx,y0+sz+18,`a = ${aLbl}`,unkA)+
+    (inside?T(cx,cy,inside,unkIn,'middle'):'')
+  );
+}
+
+function vizRect(aLbl,bLbl,aVal,bVal,inside){
+  const ratio=(aVal&&bVal)?Math.max(0.42,Math.min(2.8,aVal/bVal)):1.75;
+  const maxW=168,maxH=104;
+  let w,h;
+  if(ratio>=1){w=maxW;h=Math.round(maxW/ratio);}else{h=maxH;w=Math.round(maxH*ratio);}
+  w=Math.max(72,w);h=Math.max(52,h);
+  const x0=(VW-w)/2,y0=(VH-h)/2-8,cx=x0+w/2,cy=y0+h/2;
+  const unkA=aLbl==='?',unkB=bLbl==='?',unkIn=inside&&inside.includes('?');
+  const bx=x0+w+24,by=cy;
+  const fill='rgba(45,106,79,0.09)';
+  return svgWrap(
+    `<rect x="${x0}" y="${y0}" width="${w}" height="${h}" fill="${fill}" stroke="var(--text)" stroke-width="2"/>`+
+    RA(x0,y0,'tl')+RA(x0+w,y0,'tr')+RA(x0+w,y0+h,'br')+RA(x0,y0+h,'bl')+
+    T(cx,y0+h+18,`a = ${aLbl}`,unkA)+
+    `<text x="${bx.toFixed(1)}" y="${by.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="13" fill="${unkB?'var(--accent)':'var(--text)'}" font-weight="${unkB?700:500}" transform="rotate(-90,${bx.toFixed(1)},${by.toFixed(1)})">b = ${bLbl}</text>`+
+    (inside?T(cx,cy,inside,unkIn):'')
+  );
+}
+
+function vizEquilateral(aLbl){
+  const A=[68,148],B=[212,148],Tv=[140,23];
+  const unk=aLbl==='?';
+  return svgWrap(
+    `<polygon points="${A} ${B} ${Tv}" fill="rgba(45,106,79,0.09)" stroke="var(--text)" stroke-width="2"/>`+
+    TICK(A,B)+TICK(A,Tv)+TICK(B,Tv)+
+    edgeLbl(A,B,Tv,'a',aLbl,18)+
+    edgeLbl(A,Tv,B,'a',aLbl,26)+
+    edgeLbl(B,Tv,A,'a',aLbl,26)
+  );
+}
+
+function vizIsosceles(aLbl,bLbl){
+  const A=[80,148],B=[200,148],Tv=[140,42];
+  return svgWrap(
+    `<polygon points="${A} ${B} ${Tv}" fill="rgba(45,106,79,0.09)" stroke="var(--text)" stroke-width="2"/>`+
+    TICK(A,Tv)+TICK(B,Tv)+
+    edgeLbl(A,B,Tv,'b',bLbl,18)+
+    edgeLbl(A,Tv,B,'a',aLbl,28)+
+    edgeLbl(B,Tv,A,'a',aLbl,28)
+  );
+}
+
+function vizScalene(aLbl,bLbl,cLbl,aV,bV,cV){
+  // place side a as base (A→B), side c = A→C, side b = B→C
+  const cosA=(aV*aV+cV*cV-bV*bV)/(2*aV*cV);
+  const Cx_=cV*cosA,Cy_=cV*Math.sqrt(Math.max(0,1-cosA*cosA));
+  const raw=[[0,0],[aV,0],[Cx_,Cy_]];           // +Cy_: apex above base in math coords
+  const xs=raw.map(p=>p[0]),ys=raw.map(p=>p[1]);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minY=Math.min(...ys),maxY=Math.max(...ys);
+  const sc=Math.min(155/(maxX-minX),92/(maxY-minY));
+  const ox=(VW-(maxX-minX)*sc)/2-minX*sc;
+  const oy=(VH+(maxY-minY)*sc)/2;               // base sits at bottom of centred region
+  const pts=raw.map(([x,y])=>[+(x*sc+ox).toFixed(1),+(-y*sc+oy).toFixed(1)]);
+  const[A,Bv,C]=pts;
+  const poly=pts.map(p=>p.join(',')).join(' ');
+  return svgWrap(
+    `<polygon points="${poly}" fill="rgba(45,106,79,0.09)" stroke="var(--text)" stroke-width="2"/>`+
+    edgeLbl(A,Bv,C,'a',aLbl,22)+
+    edgeLbl(Bv,C,A,'b',bLbl,28)+
+    edgeLbl(A,C,Bv,'c',cLbl,28)
+  );
+}
+
+function vizCircle(){
+  const r=50,cx=VW/2,cy=VH/2;
+  const fill='rgba(45,106,79,0.09)';
+  return svgWrap(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="var(--text)" stroke-width="2"/>`);
+}
+
+function vizSphere(){
+  const r=50,cx=VW/2,cy=VH/2;
+  const fill='rgba(45,106,79,0.09)';
+  return svgWrap(
+    `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" stroke="var(--text)" stroke-width="2"/>`+
+    `<ellipse cx="${cx}" cy="${cy}" rx="${r}" ry="${r/3}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"/>`
+  );
+}
+
+function makeViz(v){
+  if(!v)return'';
+  if(v.t==='sq')  return vizSquare(v.a,v.in);
+  if(v.t==='rc')  return vizRect(v.a,v.b,v.aV,v.bV,v.in);
+  if(v.t==='eq')  return vizEquilateral(v.a);
+  if(v.t==='iso') return vizIsosceles(v.a,v.b);
+  if(v.t==='sc')  return vizScalene(v.a,v.b,v.c,v.aV,v.bV,v.cV);
+  if(v.t==='cir') return vizCircle();
+  if(v.t==='sph') return vizSphere();
+  if(v.type==='cuboid')return vizCuboid(v.a,v.b,v.c,v.aVal,v.bVal,v.cVal);
+  if(v.type==='cube')  return vizCube(v.a);
+  return'';
+}
+
+// ═══════════════════════════════════════════════════════
+//  GEOMETRY GENERATORS
+// ═══════════════════════════════════════════════════════
+function geo(shape,given,ans,to,qLabel,viz){
+  return{isGeo:true,shape,given,ans,to,qLabel,viz};
+}
+
+const GEO={
+  Kerület:[
+    ()=>{const a=randInt(2,20);     return geo('Négyzet',  `a = ${a} cm`,       String(4*a),  'cm', 'K',   {t:'sq',a:`${a} cm`,   in:null})},
+    ()=>{const a=randInt(2,15);     return geo('Négyzet',  `K = ${4*a} cm`,     String(a),    'cm', 'a',   {t:'sq',a:'?',         in:null})},
+    ()=>{const a=randInt(2,15),b=randInt(2,15); return geo('Téglalap',`a = ${a} cm,  b = ${b} cm`,String(2*(a+b)),'cm','K',{t:'rc',a:`${a} cm`,b:`${b} cm`,aV:a,bV:b,in:null})},
+    ()=>{const a=randInt(2,12),b=randInt(2,12); return geo('Téglalap',`K = ${2*(a+b)} cm,  a = ${a} cm`,String(b),'cm','b',{t:'rc',a:`${a} cm`,b:'?',aV:a,bV:null,in:null})},
+    ()=>{const a=randInt(2,12),b=randInt(2,12); return geo('Téglalap',`K = ${2*(a+b)} cm,  b = ${b} cm`,String(a),'cm','a',{t:'rc',a:'?',b:`${b} cm`,aV:null,bV:b,in:null})},
+  ],
+  Terület:[
+    ()=>{const a=randInt(2,15);     return geo('Négyzet',  `a = ${a} cm`,       String(a*a),  'cm²','T',   {t:'sq',a:`${a} cm`,   in:'T = ?'})},
+    ()=>{const a=randInt(2,12),b=randInt(2,12); return geo('Téglalap',`a = ${a} cm,  b = ${b} cm`,String(a*b),'cm²','T',{t:'rc',a:`${a} cm`,b:`${b} cm`,aV:a,bV:b,in:'T = ?'})},
+    ()=>{const a=randInt(2,10),b=randInt(2,10); return geo('Téglalap',`T = ${a*b} cm²,  a = ${a} cm`,String(b),'cm','b',{t:'rc',a:`${a} cm`,b:'?',aV:a,bV:null,in:`T = ${a*b} cm²`})},
+  ],
+  Alakzatok:[
+    ()=>geo('Milyen síkidom?','','négyzet','','(négyzet / téglalap / háromszög / kör)',{t:'sq',a:'5 cm'}),
+    ()=>geo('Milyen síkidom?','','téglalap','','(négyzet / téglalap / háromszög / kör)',{t:'rc',a:'6 cm',b:'3 cm',aV:6,bV:3}),
+    ()=>geo('Milyen síkidom?','','háromszög','','(négyzet / téglalap / háromszög / kör)',{t:'eq',a:'5 cm'}),
+    ()=>geo('Milyen síkidom?','','kör','','(négyzet / téglalap / háromszög / kör)',{t:'cir'}),
+    ()=>geo('Milyen test?','','kocka','','(kocka / téglatest / gömb)',{type:'cube',a:'5 cm'}),
+    ()=>geo('Milyen test?','','téglatest','','(kocka / téglatest / gömb)',{type:'cuboid',a:'6 cm',b:'4 cm',c:'3 cm',aVal:6,bVal:4,cVal:3}),
+    ()=>geo('Milyen test?','','gömb','','(kocka / téglatest / gömb)',{t:'sph'}),
+  ]
+};
+
+// ═══════════════════════════════════════════════════════
+//  CONVERSION GENERATORS
+// ═══════════════════════════════════════════════════════
+const FRACS=[0.5,0.25,0.75];
+
+function tryPair(s,l,map,goUp){
+  const from=goUp?s:l,to=goUp?l:s,fac=map[from]/map[to];
+  for(let i=0;i<500;i++){
+    const ans=randInt(1,999),src=ans/fac;
+    if(src<1||src>5000)continue;
+    const ss=niceStr(src);if(!ss||ans>50000)continue;
+    return{srcVal:src,ans:String(ans),from,to};
+  }
+  return null;
+}
+
+function tryPairDec(s,l,map,goUp){
+  const from=goUp?s:l,to=goUp?l:s,fac=map[from]/map[to];
+  for(let i=0;i<500;i++){
+    const ans=Math.floor(_rng()*100)+FRACS[randInt(0,2)];
+    if(ans<=0||ans>999)continue;
+    const src=ans/fac;
+    if(src<1||src>5000)continue;
+    const ss=niceStr(src);if(!ss)continue;
+    const as=niceStr(ans);if(!as||!as.includes(','))continue;
+    return{srcVal:src,ans:as,from,to};
+  }
+  return null;
+}
+
+function pickConv(cats){
+  const non=cats.filter(c=>c!=='Idő'),tw=1/3,tot=non.length+(cats.includes('Idő')?tw:0);
+  let r=_rng()*tot;
+  for(const c of non){r-=1;if(r<=0)return c;}
+  return'Idő';
+}
+
+function makeConv(cats,dj,goUp,dec){
+  const pool=dj?DOUBLE:SINGLE,pri=pickConv(cats),rest=shuffle(cats.filter(c=>c!==pri));
+  for(const cat of[pri,...rest]){
+    const map=CONV_UNITS[cat];
+    for(const[s,l]of shuffle(pool[cat]||[])){
+      const r=dec?tryPairDec(s,l,map,goUp):tryPair(s,l,map,goUp);
+      if(!r)continue;
+      const srcStr=cat==='Idő'?fmtTime(r.srcVal,r.from):niceStr(r.srcVal)+' '+r.from;
+      return{isGeo:false,srcStr,ans:r.ans,to:r.to,goUp};
+    }
+  }
+  if(dj)return makeConv(cats,false,goUp,dec);
+  if(dec)return makeConv(cats,dj,goUp,false);
+  return makeConv(cats,false,!goUp,false);
+}
+
+// ═══════════════════════════════════════════════════════
+//  WORD PROBLEMS  (SZÖVEGES FELADATOK)
+// ═══════════════════════════════════════════════════════
+const WN=['Pista','Kati','Bence','Anna','Péter','Zsuzsi','Dani','Lili','Ádám','Réka','Márton','Eszter'];
+function wn(){return randChoice(WN)}
+function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
+
+const FRAC_SUBJ={2:'fele',3:'harmada',4:'negyede',5:'ötöde'};
+const FRAC_ACC ={2:'felét',3:'harmadát',4:'negyedét',5:'ötödét'};
+
+const WORD_T=[
+  // 1. Vásárlás: összköltség
+  {unit:'Ft',
+   gen(){const price=randChoice([50,80,100,120,150,200,250,300,400,500]),n=randInt(2,9);return{price,n,ans:price*n,name:wn()}},
+   ph:[
+    d=>`Egy füzet ${d.price} Ft. ${d.name} ${d.n} füzetet vesz. Mennyit fizet összesen?`,
+    d=>`Egy kifli ${d.price} Ft-ba kerül. ${d.name} anyukája ${d.n} kiflit vesz. Mennyi az összeg?`,
+    d=>`${d.name} ${d.n} darab ${d.price} Ft-os ceruzát vesz. Mennyi pénzt kell fizetnie?`,
+    d=>`Egy gombóc fagyi ${d.price} Ft. ${d.name} és ${d.n-1} barátja vesznek egy-egy gombócot. Mennyit fizetnek?`,
+    d=>`Egy alma ${d.price} Ft a piacon. ${d.name} ${d.n} almát vesz. Mennyi az összköltség?`,
+  ]},
+
+  // 2. Vásárlás: visszajáró
+  {unit:'Ft',
+   gen(){
+    const price=(randInt(1,20)*50);
+    const paid=Math.ceil((price+1)/500)*500;
+    if(paid===price)return null;
+    return{price,paid,ans:paid-price,name:wn()};
+   },
+   ph:[
+    d=>`${d.name} ${d.price} Ft-ért vásárol, és ${d.paid} Ft-tal fizet. Mennyi a visszajáró?`,
+    d=>`Egy könyv ${d.price} Ft-ba kerül. ${d.name} ${d.paid} Ft-ot ad a pénztárosnak. Mennyit kap vissza?`,
+    d=>`Az iskolai büfében ${d.name} ${d.price} Ft-ért vásárol, és ${d.paid} Ft-ot ad. Mennyi a visszajáró?`,
+    d=>`A pékségben ${d.name} ${d.price} Ft-ért vásárol, és ${d.paid} Ft-tal fizet. Mennyi a visszajáró?`,
+  ]},
+
+  // 3. Törtrész (egyszerű)
+  {unit:'db',
+   gen(){
+    const den=randChoice([2,4,5,10]),r=randInt(2,10),W=r*den;
+    return{W,den,r,ans:r,fs:FRAC_SUBJ[den],fa:FRAC_ACC[den],name:wn()};
+   },
+   ph:[
+    d=>({text:`${d.name} ${d.W} almát szedett le a fáról. Az almák ${d.fa} megette. Hányat evett meg?`,unit:'db'}),
+    d=>({text:`Egy osztályban ${d.W} tanuló van. A tanulók ${d.fs} lány. Hány lány van az osztályban?`,unit:'fő'}),
+    d=>({text:`${d.name} ${d.W} matricát gyűjtött. A matricák ${d.fs} focis. Hány focis matrica van?`,unit:'db'}),
+  ]},
+
+  // 4. Életkori feladatok
+  {unit:'évvel',
+   gen(){
+    const type=randChoice(['sibling','parent','grandparent']);
+    let older,younger,diff;
+    if(type==='sibling'){ younger=randInt(6,12); diff=randInt(1,6); older=younger+diff; }
+    else if(type==='parent'){ younger=randInt(8,12); diff=randInt(22,35); older=younger+diff; }
+    else { younger=randInt(8,12); diff=randInt(45,60); older=younger+diff; }
+    return{type,diff,younger,older,ans:diff,name:wn()};
+   },
+   ph:[
+    d=>({text:d.type==='sibling' ? `${d.name} ${d.older} éves, húga ${d.younger} éves. Hány évvel idősebb ${d.name}?`
+                 : d.type==='parent' ? `Apa ${d.older} éves, fia ${d.younger} éves. Hány évvel idősebb az apa?`
+                 : `Nagyapa ${d.older} éves, unokája ${d.younger} éves. Hány évvel idősebb a nagyapa?`, unit:'évvel'}),
+    d=>({text:`${d.name} ${d.younger} éves. Bátyja ${d.diff} évvel idősebb. Hány éves a bátyja?`, unit:'év', ans:d.older}),
+  ]},
+
+  // 5. Szorzásos szöveges
+  {unit:'db',
+   gen(){const n=randInt(2,9),each=randInt(2,12);return{n,each,ans:n*each,name:wn()}},
+   ph:[
+    d=>`${d.name} osztályában ${d.n} sor van, minden sorban ${d.each} tanuló ül. Hány tanuló van összesen?`,
+    d=>`Egy dobozban ${d.each} tojás van. Hány tojás van ${d.n} dobozban?`,
+    d=>`Egy héten ${d.each} km-t kerékpározik ${d.name}. Hány km-t tesz meg ${d.n} hét alatt?`,
+    d=>`Egy könyvespolcon ${d.each} könyv fér el. Hány könyvet tartalmaz ${d.n} polc?`,
+  ]},
+
+  // 6. Kerület szöveges
+  {unit:'m',
+   gen(){const a=randInt(3,20),b=randInt(3,20);return{a,b,ans:2*(a+b),name:wn()}},
+   ph:[
+    d=>`Egy téglalap alakú kert hossza ${d.a} m, szélessége ${d.b} m. Mekkora a kerülete?`,
+    d=>`${d.name} szobájának hossza ${d.a} m, szélessége ${d.b} m. Mekkora a szoba kerülete?`,
+    d=>({text:`Egy könyvborító ${d.a} cm hosszú és ${d.b} cm széles. Mekkora a kerülete?`,unit:'cm'}),
+    d=>`Egy focipálya ${d.a} m hosszú és ${d.b} m széles. ${d.name} egyszer körbesétálja. Hány métert sétál?`,
+  ]},
+
+  // 7. Terület szöveges
+  {unit:'m²',
+   gen(){const a=randInt(3,15),b=randInt(3,15);return{a,b,ans:a*b,name:wn()}},
+   ph:[
+    d=>`Egy szoba ${d.a} m hosszú és ${d.b} m széles. Mekkora a területe?`,
+    d=>`Egy kert ${d.a} m × ${d.b} m méretű. Hány m² a területe?`,
+    d=>({text:`Egy papírlap ${d.a} cm × ${d.b} cm. Mekkora a területe?`,unit:'cm²'}),
+  ]},
+];
+
+function makeWordEx(){
+  const tmpl=randChoice(WORD_T);
+  let data,tries=0;
+  while(tries++<50){data=tmpl.gen();if(data)break;}
+  if(!data)return makeWordEx();
+  const phr=randChoice(tmpl.ph);
+  const res=phr(data);
+  const text=typeof res==='string'?res:res.text;
+  const unit=typeof res==='string'?tmpl.unit:(res.unit||tmpl.unit);
+  const finalAns = (typeof res==='object' && res.ans !== undefined) ? res.ans : data.ans;
+  return{isGeo:false,isWord:true,srcStr:text,ans:hf(finalAns),to:unit,goUp:true};
+}
+
+// ═══════════════════════════════════════════════════════
+//  STATE & SETTINGS  — 6 curriculum categories
+// ═══════════════════════════════════════════════════════
+const GROUPS=[
+  {id:'szamelm', name:'🔢 Számok és műveletek',
+   sub:'Helyiérték, kerekítés, szorzótábla, római számok, páros-páratlan',
+   cats:['Helyiérték','Kerekítés','Szorzótábla','RómaiSzámok','ParosParatlan']},
+  {id:'muveletek', name:'➕ Számolás',
+   sub:'Írásbeli műveletek, műveleti sorrend, szöveges feladatok',
+   cats:['Alapmuveletek','Egyenlet','Szöveges']},
+  {id:'tortek', name:'½ Törtek',
+   sub:'Törtrész, egyszerű törtek, számegyenes, összehasonlítás',
+   cats:['Tortek']},
+  {id:'geo', name:'📐 Geometria',
+   sub:'Alakzatok felismerése, kerület, terület',
+   cats:['Kerület','Terület','Alakzatok']},
+  {id:'meres', name:'📏 Mérés',
+   sub:'Hosszúság, tömeg, űrtartalom, idő, pénz',
+   cats:['Hosszúság','Tömeg','Űrtartalom','Idő','Pénz']},
+  {id:'gondolk', name:'📊 Gondolkodási módok',
+   sub:'Sorozatok, szabályok, adatok',
+   cats:['Sorozatok','Szabályok','Statisztika']},
+];
+const GEO_CATS=new Set(['Kerület','Terület','Alakzatok']);
+const WORD_CAT='Szöveges';
+const ARITH_CATS=new Set(['Helyiérték','Kerekítés','Szorzótábla','RómaiSzámok','ParosParatlan',
+                          'Alapmuveletek','Egyenlet',
+                          'Tortek','Sorozatok','Szabályok','Statisztika','Pénz']);
+
+let activeGroups = new Set(GROUPS.map(g => g.id));
+let showViz=false;
+let exercises=[],qIdx=0,score=0,answered=false;
+const AUTO_MS=700;
+
+function activeCats(){return GROUPS.filter(g=>activeGroups.has(g.id)).flatMap(g=>g.cats)}
+
+// ─── settings render ──────────────────────────────────
+function renderGroups(){
+  const list=document.getElementById('group-list');
+  list.innerHTML='';
+  for(const g of GROUPS){
+    const on=activeGroups.has(g.id);
+    const b=document.createElement('button');
+    b.className='row-btn'+(on?' on':'');
+    b.innerHTML=`<div><div class="row-title">${g.name}</div><div class="row-sub">${g.sub}</div></div>`+
+                `<span class="row-check">${on?'✓':''}</span>`;
+    b.onclick=()=>toggleGroup(g.id);
+    list.appendChild(b);
+  }
+  const dis = activeGroups.size===0;
+  document.getElementById('start-btn').disabled=dis;
+  const pb = document.getElementById('print-btn');
+  if(pb) pb.disabled=dis;
+}
+
+function toggleGroup(id){
+  if(activeGroups.has(id)){if(activeGroups.size>1)activeGroups.delete(id);}
+  else activeGroups.add(id);
+  renderGroups();
+}
+
+function updateVizTog(){
+  const btn=document.getElementById('viz-tog');
+  if(btn.style.display!=='none')
+    btn.textContent=showViz?'▲ ábra elrejtése':'▼ ábra megjelenítése';
+}
+function toggleViz(){
+  showViz=!showViz;
+  const ex=exercises[qIdx];
+  if(ex&&ex.isGeo){
+    const vizHtml=(showViz&&ex.viz)?makeViz(ex.viz):'';
+    const needsGiven=!vizHtml||(ex.viz&&ex.viz.in==null&&ex.qLabel!=='K'&&ex.qLabel!=='T');
+    document.getElementById('q-top').innerHTML=
+      `<div class="geo-label">${ex.shape}</div>`+
+      (needsGiven?`<div class="geo-given">${ex.given}</div>`:'');
+    document.getElementById('q-viz').innerHTML=vizHtml;
+  }
+  updateVizTog();
+}
+
+// ─── screen ───────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+//  ARITHMETIC GENERATORS  — 4th grade curriculum
+//  Each returns {isArith:true, srcStr, ans, to, prompt}
+// ═══════════════════════════════════════════════════════
+function arith(prompt, ans, unit){
+  return{isArith:true,isGeo:false,isWord:false,srcStr:prompt,ans:String(ans),to:unit||'',goUp:true};
+}
+
+// ── Helpers ──────────────────────────────────────────
+function toRoman(num) {
+  const map = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
+  let str = "";
+  for (let i in map) { while (num >= map[i]) { str += i; num -= map[i]; } }
+  return str;
+}
+
+// ── Helyiérték ────────────────────────────────────────
+const HELYIERTEKTPL=[
+  ()=>{
+    const n=randInt(100,9999);
+    const digits=[1000,100,10,1];
+    const names=['ezres','százas','tízes','egyes'];
+    const pick=randInt(0,3);
+    const d=Math.floor(n/digits[pick])%10;
+    return arith(`A ${n} számban hány ${names[pick]} van?`, d, '');
+  },
+  ()=>{
+    const n=randInt(1000,9999);
+    const places=[{v:1000,n:'ezresek'},{v:100,n:'százasok'},{v:10,n:'tízesek'},{v:1,n:'egyesek'}];
+    const pick=randChoice(places);
+    const d=Math.floor(n/pick.v)%10;
+    const art=pick.n[0]==='e'?'az':'a';
+    return arith(`${n} – melyik számjegy áll ${art} ${pick.n} helyén?`, d, '');
+  },
+  ()=>{
+    const n=randInt(1,9),to=randChoice([10,100,1000]);
+    const names={10:'tízes',100:'százas',1000:'ezres'};
+    return arith(`Hány egyes van ${n} ${names[to]}ben?`, n*to, '');
+  },
+];
+
+// ── Kerekítés ─────────────────────────────────────────
+const KEREKITSTPL=[
+  ()=>{
+    const n=randInt(10,9999);
+    const to=randChoice([10,100]);
+    const names={10:'tízesre',100:'százasra'};
+    const rounded=Math.round(n/to)*to;
+    return arith(`Kerekítsd ${names[to]}! ${n}`, rounded, '');
+  },
+  ()=>{
+    const exact=randInt(5,90)*100;
+    const delta=randChoice([-1,-2,-10,-20,1,2,10,20]);
+    const n=exact+delta;
+    const rounded=Math.round(n/100)*100;
+    return arith(`Kerekítsd százasra! ${n}`, rounded, '');
+  },
+  ()=>{
+    const exact=randInt(2,9)*1000;
+    const delta=randChoice([-1,-50,-100,-200,-499,1,50,100,200,499]);
+    const n=exact+delta;
+    const rounded=Math.round(n/1000)*1000;
+    return arith(`Kerekítsd ezresre! ${n}`, rounded, '');
+  },
+];
+
+// ── Római számok ──────────────────────────────────────
+const ROMAITPL=[
+  ()=>{const n=randInt(1,20); return arith(`Írd le arab számmal: ${toRoman(n)}`, n, '');},
+  ()=>{const n=randChoice([5,10,50,100,500,1000]); return arith(`Írd le arab számmal: ${toRoman(n)}`, n, '');},
+  ()=>{const n=randInt(1,10); return arith(`Írd le római számmal: ${n}`, toRoman(n), '');},
+  ()=>{const n=randInt(11,20); return arith(`Írd le római számmal: ${n}`, toRoman(n), '');},
+];
+
+// ── Páros-páratlan ────────────────────────────────────
+const PAROSTPL=[
+  ()=>{const n=randInt(1,1000); return arith(`Páros vagy páratlan? ${n}\n(Írd be: paros vagy paratlan)`, n%2===0?'paros':'paratlan', '');},
+  ()=>{const n=randInt(1,100)*2; return arith(`Melyik a ${n} utáni következő páros szám?`, n+2, '');},
+  ()=>{const n=randInt(1,100)*2+1; return arith(`Melyik a ${n} utáni következő páratlan szám?`, n+2, '');},
+];
+
+// ── Alapműveletek ─────────────────────────────────────
+const ALAPMUVTPL=[
+  // összeadás/kivonás 10000-ig
+  ()=>{const a=randInt(100,9000),b=randInt(100,999);return arith(`${a} + ${b} = ?`, a+b, '');},
+  ()=>{const a=randInt(1000,9000),b=randInt(1000,9000);return arith(`${a} + ${b} = ?`, a+b, '');},
+  ()=>{const b=randInt(100,4000),a=randInt(b+1,9999);return arith(`${a} − ${b} = ?`, a-b, '');},
+  // szorzás egyjegyűvel
+  ()=>{const a=randInt(10,999),b=randInt(2,9);return arith(`${a} × ${b} = ?`, a*b, '');},
+  ()=>{const a=randInt(1000,4999),b=randInt(2,2);return arith(`${a} × ${b} = ?`, a*b, '');},
+  // osztás egyjegyűvel (maradék nélkül)
+  ()=>{const b=randInt(2,9),ans=randInt(10,150);return arith(`${b*ans} ÷ ${b} = ?`, ans, '');},
+  // maradékos osztás
+  ()=>{
+    const b=randInt(2,9),ans=randInt(5,50),rem=randInt(1,b-1);
+    return arith(`Mennyi a maradék? ${b*ans+rem} ÷ ${b}`, rem, '');
+  },
+  // műveleti sorrend
+  ()=>{const a=randInt(10,50),b=randInt(2,9),c=randInt(2,5);return arith(`${a} + ${b} × ${c} = ?`, a+b*c, '');},
+];
+
+// ── Egyenletek ────────────────────────────────────────
+const EGYENLTPL=[
+  ()=>{const x=randInt(1,100),b=randInt(1,50);return arith(`x + ${b} = ${x+b}  →  x = ?`, x, '');},
+  ()=>{const x=randInt(1,100),b=randInt(1,50);return arith(`x − ${b} = ${x-b>=0?x-b:x+b}  →  x = ?`, x, '');},
+  ()=>{const x=randInt(2,20),a=randInt(2,9);return arith(`${a} × x = ${a*x}  →  x = ?`, x, '');},
+];
+
+// ── Törtek ────────────────────────────────────────────
+const TORTTPL=[
+  // törtrész: W × (1/den) — core 4th grade
+  ()=>{
+    const den=randChoice([2,4,5,10]);
+    const part=randInt(1,5);
+    const W=part*den;
+    const names={2:'fele',4:'negyede',5:'ötöde',10:'tizede'};
+    return arith(`${W} darab ${names[den]} = ?`, part, 'db');
+  },
+  // which unit fraction is bigger (1/n vs 1/m)
+  ()=>{
+    const den=randChoice([2,3,4,5,6,8,10]);
+    const num=1;
+    const den2=den+randInt(1,3);
+    return{isArith:true,isGeo:false,isWord:false,srcStr:`Melyik a nagyobb?\n${num}/${den}  vagy  ${num}/${den2}`,
+           ans:`${num}/${den}`,to:'',goUp:true};
+  },
+  // read a fraction: numerator question
+  ()=>{
+    const n=randInt(1,7),d=randInt(n+1,10);
+    return arith(`A ${n}/${d} törtben mi a számláló?`, n, '');
+  },
+  // read a fraction: denominator question
+  ()=>{
+    const n=randInt(1,7),d=randInt(n+1,10);
+    return arith(`A ${n}/${d} törtben mi a nevező?`, d, '');
+  },
+  // same denominator comparison
+  ()=>{
+    const d=randChoice([4,5,6,8,10]);
+    const a=randInt(1,d-1),b=randInt(1,d-1);
+    if(a===b) return null;
+    const bigger=a>b?`${a}/${d}`:`${b}/${d}`;
+    return{isArith:true,isGeo:false,isWord:false,srcStr:`Melyik a nagyobb?\n${a}/${d}  vagy  ${b}/${d}`,
+           ans:bigger,to:'',goUp:true};
+  },
+  // equivalent fraction: fill in numerator
+  ()=>{
+    const d1=randChoice([2,3,4,5]);
+    const n1=randInt(1,d1-1);
+    const mult=randChoice([2,3,4]);
+    return arith(`${n1}/${d1} = ?/${d1*mult}`, n1*mult, '');
+  },
+  // fraction of a quantity word-style
+  ()=>{
+    const den=randChoice([2,4,5,10]);
+    const part=randInt(2,8);
+    const W=part*den;
+    return arith(`${W} kg 1/${den}-e = ?`, part, 'kg');
+  },
+  // place on number line: which fraction equals given position
+  ()=>{
+    const d=randChoice([2,4,5,10]);
+    const n=randInt(1,d-1);
+    return arith(`A számegyenesen 0 és 1 között egyenlő részekre osztottuk ${d} részre.\nA ${n}. jelölőpont melyik törtnek felel meg?`, `${n}/${d}`, '');
+  },
+];
+
+// ── Sorozatok és szabályok ─────────────────────────────
+const SOROZATTPL=[
+  // arithmetic increasing
+  ()=>{
+    const start=randInt(1,100),diff=randInt(2,10);
+    const s=[start,start+diff,start+2*diff];
+    return arith(`Folytasd a sorozatot! ${s.join(', ')}, ...`, start+3*diff, '');
+  },
+  // arithmetic decreasing
+  ()=>{
+    const start=randInt(50,500),diff=randInt(5,20);
+    const s=[start,start-diff,start-2*diff];
+    return arith(`Folytasd a sorozatot! ${s.join(', ')}, ...`, start-3*diff, '');
+  },
+  // multiplicative ×2 / ×3 / ×5
+  ()=>{
+    const mult=randChoice([2,3,5]);
+    const start=randChoice([1,2,3,4]);
+    const s=[start,start*mult,start*mult*mult];
+    return arith(`Folytasd a sorozatot! ${s.join(', ')}, ...`, start*mult*mult*mult, '');
+  },
+  // find the missing term
+  ()=>{
+    const start=randInt(5,50),diff=randInt(3,15);
+    const terms=[start,start+diff,'?',start+3*diff];
+    return arith(`Melyik szám hiányzik? ${terms.join(', ')}`, start+2*diff, '');
+  },
+  // identify the rule
+  ()=>{
+    const diff=randInt(2,8);
+    const start=randInt(2,20);
+    const s=[start,start+diff,start+2*diff,start+3*diff];
+    return arith(`Sorozat: ${s.join(', ')}\nMi a szabály? (mennyi az ugrás?)`, diff, '');
+  },
+];
+const SZABALYTPL=[
+  ()=>{
+    const a=randInt(1,10);
+    return arith(`□ + △ = 20. Ha □ = ${a}, mennyi △?`, 20-a, '');
+  },
+  ()=>{
+    const mul=randInt(2,5);
+    return arith(`A szabály: y = x × ${mul}. Ha x = 4, mennyi y?`, 4*mul, '');
+  },
+  // function table — output given rule
+  ()=>{
+    const add=randInt(3,15);
+    const x=randInt(5,20);
+    return arith(`Szabály: minden számhoz hozzáadunk ${add}-t.\nHa a bemenet ${x}, mi a kimenet?`, x+add, '');
+  },
+  // function table — find rule
+  ()=>{
+    const mul=randChoice([2,3,4,5]);
+    const x=randInt(2,9);
+    return arith(`Bemenet → kimenet: 1 → ${mul},  2 → ${2*mul},  3 → ${3*mul}\nMi a szabály? (x × ?)`, mul, '');
+  },
+  // what comes before
+  ()=>{
+    const diff=randInt(4,12);
+    const third=randInt(20,80);
+    return arith(`..., ?, ${third}, ${third+diff}, ${third+2*diff}\nMi a hiányzó szám?`, third-diff, '');
+  },
+];
+
+// ── Statisztika ───────────────────────────────────────
+const STATTPL=[
+  ()=>{
+    const vals=Array.from({length:3},()=>randInt(1,10));
+    const sum=vals.reduce((a,b)=>a+b,0);
+    return arith(`Adatok: ${vals.join(', ')}\nMennyi az összegük?`, sum, '');
+  },
+  ()=>{
+    const vals=[randInt(10,20),randInt(1,5),randInt(21,30)];
+    return arith(`Adatok: ${vals.join(', ')}\nMelyik a legkisebb?`, Math.min(...vals), '');
+  },
+  ()=>{
+    const vals=Array.from({length:4},()=>randInt(1,20));
+    return arith(`Adatok: ${vals.join(', ')}\nMelyik a legnagyobb?`, Math.max(...vals), '');
+  },
+  ()=>{
+    const vals=Array.from({length:4},()=>randInt(1,15));
+    const range=Math.max(...vals)-Math.min(...vals);
+    return arith(`Adatok: ${vals.join(', ')}\nMennyi a terjedelem (legnagyobb − legkisebb)?`, range, '');
+  },
+  ()=>{
+    const avg=randInt(3,10),n=3;
+    const sum=avg*n;
+    return arith(`${n} adat átlaga ${avg}. Mi az összegük?`, sum, '');
+  },
+  ()=>{
+    // simple average of 3 small numbers
+    const a=randInt(2,8),b=randInt(2,8),c=randInt(2,8);
+    const sum=a+b+c;
+    if(sum%3!==0) return null;
+    return arith(`Adatok: ${a}, ${b}, ${c}\nMennyi az átlaguk?`, sum/3, '');
+  },
+];
+
+// ── Szorzótábla ───────────────────────────────────────
+const SZORZOTABLATPL=[
+  // forward: a × b = ?
+  ()=>{
+    const a=randInt(2,10),b=randInt(2,10);
+    return arith(`${a} × ${b} = ?`, a*b, '');
+  },
+  // reverse: ? × b = product
+  ()=>{
+    const a=randInt(2,10),b=randInt(2,10);
+    return arith(`? × ${b} = ${a*b}`, a, '');
+  },
+  // division from times table
+  ()=>{
+    const a=randInt(2,10),b=randInt(2,10);
+    return arith(`${a*b} ÷ ${b} = ?`, a, '');
+  },
+  // fill in missing factor
+  ()=>{
+    const a=randInt(3,9),b=randInt(3,9);
+    return arith(`${a} × □ = ${a*b}   □ = ?`, b, '');
+  },
+];
+
+// ── Pénz ──────────────────────────────────────────────
+const PENZTPL=[
+  // forint coins/banknotes: how many pieces make the amount
+  ()=>{
+    const denom=randChoice([5,10,20,50,100,200,500,1000]);
+    const count=randInt(2,9);
+    return arith(`${count} db ${denom} Ft-os összesen hány Ft?`, count*denom, 'Ft');
+  },
+  // how many of a denomination fit into an amount
+  ()=>{
+    const denom=randChoice([5,10,20,50,100]);
+    const count=randInt(2,8);
+    return arith(`${count*denom} Ft-ból hány db ${denom} Ft-os van?`, count, 'db');
+  },
+  // give change
+  ()=>{
+    const price=randInt(1,19)*50;
+    const paid=Math.ceil((price+1)/500)*500;
+    if(paid===price) return null;
+    return arith(`Ár: ${price} Ft,  fizetett: ${paid} Ft.  Visszajáró = ?`, paid-price, 'Ft');
+  },
+  // total of two items
+  ()=>{
+    const a=randChoice([50,80,100,120,150,200]),b=randChoice([30,50,80,100,120]);
+    return arith(`${a} Ft + ${b} Ft = ?`, a+b, 'Ft');
+  },
+  // convert Ft to fill in (fillér awareness — 100 fillér = 1 Ft)
+  ()=>{
+    const ft=randInt(1,10);
+    return arith(`${ft} Ft = ? fillér`, ft*100, 'fillér');
+  },
+];
+
+// ── Dispatch ──────────────────────────────────────────
+const ARITH_GENS={
+  Helyiérték:  HELYIERTEKTPL,
+  Kerekítés:   KEREKITSTPL,
+  Szorzótábla: SZORZOTABLATPL,
+  RómaiSzámok: ROMAITPL,
+  ParosParatlan: PAROSTPL,
+  Alapmuveletek:ALAPMUVTPL,
+  Egyenlet:    EGYENLTPL,
+  Tortek:      TORTTPL,
+  Sorozatok:   SOROZATTPL,
+  Szabályok:   SZABALYTPL,
+  Statisztika: STATTPL,
+  Pénz:        PENZTPL,
+};
+
+function makeArith(cat){
+  const pool=ARITH_GENS[cat];
+  if(!pool)return arith('?',0,'');
+  let res,tries=0;
+  while(tries++<30){try{res=randChoice(pool)();if(res)return res;}catch(e){}}
+  return arith('?',0,'');
+}
+
+
+function buildQuiz(){
+  const all=activeCats();
+  const conv =all.filter(c=>!GEO_CATS.has(c)&&c!==WORD_CAT&&!ARITH_CATS.has(c));
+  const geo  =all.filter(c=> GEO_CATS.has(c));
+  const arith=all.filter(c=> ARITH_CATS.has(c));
+  const useWord=all.includes(WORD_CAT);
+
+  // pool: conv/geo each count 1 per cat, word counts 2, each arith cat counts 1
+  const pool=[];
+  conv.forEach(()=>pool.push('conv'));
+  geo.forEach(c=>pool.push({type:'geo',cat:c}));
+  arith.forEach(c=>pool.push({type:'arith',cat:c}));
+  if(useWord){pool.push('word');pool.push('word');}
+
+  // fallback if nothing selected
+  if(!pool.length) return Array.from({length:20},()=>makeConv(['Hosszúság'],false,true,false));
+
+  return Array.from({length:20},()=>{
+    const pick=randChoice(pool);
+    if(pick==='conv')  return makeConv(conv,_rng()<0.15,_rng()<0.5,_rng()<0.15);
+    if(pick==='word')  return makeWordEx();
+    if(pick&&pick.type==='geo'){
+      const gens=GEO[pick.cat]; return gens[randInt(0,gens.length-1)]();
+    }
+    if(pick&&pick.type==='arith') return makeArith(pick.cat);
+    return makeConv(['Hosszúság'],false,true,false);
+  });
+}
+
+// ─── quiz render ──────────────────────────────────────
+function startQuiz(){
+  exercises=buildQuiz();qIdx=0;score=0;
+  showScreen('quiz');renderQ();
+}
+
+function renderQ(){
+  answered=false;
+
+  // ── Reset UI first so the user can always interact, even if rendering later throws ──
+  const inp=document.getElementById('answer-input');
+  inp.value='';
+  document.getElementById('input-row').style.display='';
+  document.getElementById('feedback').style.display='none';
+  document.getElementById('next-btn').style.display='none';
+
+  const ex=exercises[qIdx];
+  document.getElementById('prog-fill').style.width=(qIdx/20*100)+'%';
+  document.getElementById('prog-label').textContent=(qIdx+1)+'/20';
+  document.getElementById('score-mini').textContent=`${score} helyes / ${qIdx} kérdés`;
+
+  const top=document.getElementById('q-top');
+  const viz=document.getElementById('q-viz');
+  const arrow=document.getElementById('q-arrow');
+  const target=document.getElementById('q-target');
+  const tog=document.getElementById('viz-tog');
+
+  if(ex.isWord||ex.isArith){
+    top.innerHTML=`<div class="q-word">${(ex.srcStr||'').replace(/\n/g,'<br>')}</div>`;
+    viz.innerHTML='';
+    tog.style.display='none';
+    arrow.textContent='→';
+    target.textContent=ex.isFrac?'= ?':'= _______ '+ex.to;
+    inp.placeholder=ex.isFrac?'pl. 3/4 vagy 17/8':'Válasz…';
+    inp.inputMode=ex.isFrac?'text':'decimal';
+  } else if(ex.isGeo){
+    showViz=false;   // always start hidden; user can reveal with the toggle
+    const vizHtml=(showViz&&ex.viz)?makeViz(ex.viz):'';
+    const needsGiven=!vizHtml||(ex.viz&&ex.viz.in==null&&ex.qLabel!=='K'&&ex.qLabel!=='T');
+    top.innerHTML=`<div class="geo-label">${ex.shape}</div>`+
+                  (needsGiven?`<div class="geo-given">${ex.given}</div>`:'');
+    viz.innerHTML=vizHtml;
+    tog.style.display='block';
+    updateVizTog();
+    arrow.textContent='→';
+    target.textContent=`${ex.qLabel} = _______ ${ex.to}`;
+    // use text keyboard for shape-name answers (non-numeric qLabel)
+    const isTextAnswer=isNaN(parseNum(ex.ans));
+    inp.placeholder=isTextAnswer?'Írd be a nevet…':'Válasz…';
+    inp.inputMode=isTextAnswer?'text':'decimal';
+  } else {
+    top.innerHTML=`<div class="q-source">${ex.srcStr}</div>`;
+    viz.innerHTML='';
+    tog.style.display='none';
+    arrow.textContent=ex.goUp?'↑':'↓';
+    target.textContent=`= _______ ${ex.to}`;
+    inp.placeholder='Válasz…';inp.inputMode='decimal';
+  }
+
+  inp.focus();
+}
+
+function submitAnswer(){
+  if(answered)return;
+  const raw=document.getElementById('answer-input').value;
+  if(!raw.trim())return;
+  answered=true;
+  const ex=exercises[qIdx];
+
+  const fb=document.getElementById('feedback');
+  let ok=false,msg='',result='';
+
+  if(ex.isFrac){
+    result=checkFracAnswer(raw,ex.ansN,ex.ansD);
+    if(result==='exact'){
+      ok=true;
+      msg='<span>✓</span><span>Helyes!</span>';
+    } else if(result==='unsimplified'){
+      ok=true; // counts as correct
+      msg=`<span>✓</span><span>Helyes! Egyszerűsítve: <strong>${ex.ans}</strong></span>`;
+    } else {
+      ok=false;
+      msg=`<span>✗</span><span>Helytelen – helyes válasz: <strong>${ex.ans}</strong></span>`;
+    }
+  } else {
+    const uv=parseNum(raw),cv=parseNum(ex.ans);
+    if(isNaN(cv)){
+      // normalize diacritics so "negyzet" matches "négyzet" etc.
+      const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      ok = norm(raw) === norm(ex.ans);
+    } else {
+      ok=isFinite(uv)&&Math.abs(uv-cv)<1e-9;
+    }
+    msg=ok
+      ?'<span>✓</span><span>Helyes!</span>'
+      :`<span>✗</span><span>Helytelen – helyes válasz: <strong>${ex.ans} ${ex.to}</strong></span>`;
+  }
+
+  if(ok)score++;
+  fb.className='feedback '+(ok?'ok':'err');
+  fb.style.display='flex';
+  fb.innerHTML=msg;
+
+  document.getElementById('input-row').style.display='none';
+  document.getElementById('score-mini').textContent=`${score} helyes / ${qIdx+1} kérdés`;
+
+  const autoAdvance = ok && result!=='unsimplified';
+  if(autoAdvance){setTimeout(nextQuestion,AUTO_MS);}
+  else{
+    const nb=document.getElementById('next-btn');
+    nb.textContent=qIdx+1>=20?'Eredmény →':'Következő →';
+    nb.style.display='';
+  }
+}
+
+function nextQuestion(){
+  qIdx++;
+  if(qIdx>=20){
+    showScreen('result');
+    const pct=Math.round(score/20*100);
+    document.getElementById('result-medal').textContent=pct>=90?'🥇':pct>=70?'🥈':pct>=50?'🥉':'💪';
+    document.getElementById('result-score').textContent=`${score} / 20 pont`;
+    document.getElementById('result-pct').textContent=`${pct}% helyes`;
+  }else renderQ();
+}
+
+function handleKey(e){if(e.key==='Enter'&&!answered)submitAnswer();}
+
+// ─── print logic ──────────────────────────────────────
+function printWorksheet(){
+  // Generate a random 16-bit seed for this worksheet
+  const seed16 = (Math.random()*1048576)|0 || 1; // never 0
+  _seed = seed16;
+  const code = encodeWorksheetCode(seed16, activeGroups);
+
+  // Build questions with the seeded RNG
+  const qs = buildQuiz();
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div class="print-title">Matematika feladatsor</div>
+    <div class="print-meta">
+      <span>Név: ___________________________</span>
+      <span>Dátum: 20__ . ____ . ____</span>
+      <span style="font-family:monospace;font-size:13px;color:#888">🔑 ${code}</span>
+    </div>
+    <div class="print-grid"></div>
+  `;
+  const grid = area.querySelector('.print-grid');
+  
+  qs.forEach((ex, i) => {
+    const item = document.createElement('div');
+    item.className = 'print-item';
+    if(ex.isWord) item.classList.add('wide');
+    if(ex.isArith && !ex.isFrac && (ex.srcStr||'').includes('\n')) item.classList.add('wide');
+    
+    let html = `<div class="print-num">${i + 1}. feladat</div>`;
+    
+    if (ex.isWord || ex.isArith) {
+      html += `<div class="print-text">${(ex.srcStr||'').replace(/\n/g,'<br>')}</div>`;
+      html += `<div class="print-target">= _______ ${ex.isFrac?'':ex.to}</div>`;
+    } else if (ex.isGeo) {
+      html += `<div class="print-label">${ex.shape}</div>`;
+      if (ex.viz) {
+        html += `<div class="print-viz">${makeViz(ex.viz)}</div>`;
+        const needsGiven = (ex.viz.in == null && ex.qLabel !== 'K' && ex.qLabel !== 'T');
+        if (needsGiven) html += `<div class="print-given">${ex.given}</div>`;
+      } else {
+        html += `<div class="print-given">${ex.given}</div>`;
+      }
+      html += `<div class="print-target">${ex.qLabel} = _______ ${ex.to}</div>`;
+    } else {
+      html += `<div style="display:flex; align-items:baseline; gap:8px; margin-top:8px;">
+                 <span style="font-size:19px; font-weight:700;">${ex.srcStr}</span>
+                 <span style="color:#666; font-size:14px;">${ex.goUp ? '↑' : '↓'}</span>
+                 <span style="font-size:18px;">= _______ ${ex.to}</span>
+               </div>`;
+    }
+    
+    item.innerHTML = html;
+    grid.appendChild(item);
+  });
+  
+  // Append QR support block to print area
+  const support = document.createElement('div');
+  support.className = 'print-support';
+  support.innerHTML = `
+    <div class="print-support-item">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMYAAADGAQAAAACh4MLwAAABmElEQVR4nO2YMYocQQxFn6YaJqy+wR5FczOzN6s+ig9gUIcGNd+BPMZgewMHuwq2oqKVPIT+/6o28fdz3f5RgM8K3DjNzLbzAcCxgZmZPRqwoXBJQ0pcQU4NSeH58Ww3wOwBxz2Oa2cDTtvemeDtyvnletGGj/gogj/P9rwc4hjf9vHuBG+zCTbcgBdd5kxxdmC7wWFmwAgfXx/34DKzvQfblKSEBObrtSNJWg3YULjCwROA0kIPD6HMTVqJS2uEA9CB7cZpFQd3vdruwJAUHeYNSTmVU0CWIoJs0TeeObWYS1r5i7YDm5a0SpsjGKqlqUffpIShpXAFCobWaKLTIOeSlHgRgneZN62ca0jMxVwJJY0WbOHlbxUQUgm2Sd80JGo7mmtoDanLvD03XuZSAF5fWrBFtW7l09/olKeSFLXxeuKV/i3YAqBcN+fPwesxb7caMKbyfNzjSEj8+94j68PBK+LL3yiB9GFTGa8zV85G79M6I5z5mjDi6PFe+O1dP1ftvdknFwJgRIXXUjCCHnlqn/+4/qvyAyVBT1/A4jptAAAAAElFTkSuQmCC" alt="Buy Me a Coffee QR">
+      <div style="font-size:10px">buymeacoffee.com/huvagoc</div>
+    </div>
+    <div class="print-support-item">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAK4AAACuAQAAAACHdwtDAAABPElEQVR4nO2XMW7DQAwEhz4BKU8/8FOonwX52ekpfkAAqjRwwqY4202UlGKRECqkbXZBcknKxEHslyMU/gaMAqAEJSgaGfKeI9AlAfeZvi1FUqTkZAIMB3/TajWmbS6fqUWrbZ9hW06k/AHeTLelxJmUB7DUqM2uDaCq5yh5ecfHAyR5Bz0D6Ph4z1ES3mHIKIHCE3PSa9OrLkDNygkloDaqqCpqiqQZW7Vf1fH+7F6bk1y8GawTa7kt+wx40rR/dKzUStDHZ2afOPiYbyVI8054h141hkmvreR0LAov0hjyHcDTXDxi6MEVWUoubGZmE9xnFEyg25K0i8fNtsJqMx2oLesqMFvAp+19iDmD8ne4thIUtd2yqjNkfDw28mbTSZQHsNRg7EHts59BeRSvm63jClfaLrb/v9Fv8QUCiNMkFZqoyQAAAABJRU5ErkJggg==" alt="Revolut QR">
+      <div style="font-size:10px">revolut.me/huvagoc</div>
+    </div>`;
+  area.appendChild(support);
+
+  // Set dynamic title for PDF filename
+  const now = new Date();
+  const timeStr = `${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}-${String(now.getSeconds()).padStart(2,'0')}`;
+  const origTitle = document.title;
+  document.title = `Matek_${timeStr}`;
+
+  setTimeout(()=>{
+    window.print();
+    document.title = origTitle;
+  }, 300);
+}
+
+// ─── answer key from code ─────────────────────────────
+function solveFromCode(){
+  const inp=document.getElementById('code-input');
+  const box=document.getElementById('answer-key');
+  const decoded=decodeWorksheetCode(inp.value);
+  if(!decoded){
+    box.style.display='block';
+    box.innerHTML='<span style="color:var(--err)">Érvénytelen kód. Formátum: A3F7B-3F</span>';
+    return;
+  }
+  // Temporarily override active groups and seed
+  const savedGroups=new Set(activeGroups);
+  activeGroups=decoded.groups;
+  _seed=decoded.seed;
+  const qs=buildQuiz();
+  activeGroups=savedGroups;
+
+  const lines=qs.map((ex,i)=>{
+    const ans=`<strong>${ex.ans}${ex.to?' '+ex.to:''}</strong>`;
+    return`<span style="color:var(--muted)">${i+1}.</span> ${ans}`;
+  }).join('<br>');
+  box.style.display='block';
+  box.innerHTML=`<div style="font-weight:600;margin-bottom:6px;font-size:13px;color:var(--muted);letter-spacing:.05em">MEGOLDÁSOK — ${inp.value.toUpperCase()}</div>${lines}`;
+}
+
+// ─── keyboard detection ───────────────────────────────
+if(window.visualViewport){
+  const chk=()=>document.body.classList.toggle('kb',
+    window.visualViewport.height/window.screen.height<0.65);
+  window.visualViewport.addEventListener('resize',chk);chk();
+}
+
+// ═══════════════════════════════════════════════════════
+//  SOLIDS — FELÜLET ÉS TÉRFOGAT  (added category)
+//  Téglatest: F = 2(ab+bc+ac), V = abc  •  Kocka: F = 6a², V = a³
+//  Sides 2–15 cm, integer answers.  Oblique (cabinet) projection viz.
+//  Registered purely additively below — no existing code touched.
+// ═══════════════════════════════════════════════════════
+
+// ── oblique/cabinet projection box (shared by cuboid + cube) ──
+//   front face drawn straight; depth goes upper-right at 45° with 50% foreshortening.
+function boxSVG(aV,bV,cV,lbl,isCube){
+  const k=0.5*Math.SQRT1_2;                          // depth foreshorten ≈0.3536 (=0.5·cos45)
+  const sc=Math.min(150/aV,100/bV,190/(aV+k*cV),120/(bV+k*cV));
+  const W=aV*sc,H=bV*sc,dpt=cV*sc,dx=dpt*k,dy=-dpt*k; // dy negative → depth heads up
+  const totalW=W+dx,totalH=H-dy;
+  const FX=14+(238-totalW)/2, FY=10+(128-totalH)/2-dy;
+  // 8 corners (F=front, B=back; T/B=top/bottom; L/R=left/right)
+  const FTL=[FX,FY],FTR=[FX+W,FY],FBL=[FX,FY+H],FBR=[FX+W,FY+H];
+  const BTL=[FX+dx,FY+dy],BTR=[FX+W+dx,FY+dy],BBL=[FX+dx,FY+H+dy],BBR=[FX+W+dx,FY+H+dy];
+  const pc=p=>p.map(n=>+n.toFixed(1)).join(',');
+  const face=(pts,fill)=>`<polygon points="${pts.map(pc).join(' ')}" fill="${fill}" stroke="none"/>`;
+  const seg=(p,q,hid)=>`<line x1="${p[0].toFixed(1)}" y1="${p[1].toFixed(1)}" x2="${q[0].toFixed(1)}" y2="${q[1].toFixed(1)}" stroke="${hid?'var(--muted)':'var(--text)'}" stroke-width="${hid?1.3:2}"${hid?' stroke-dasharray="4 3"':''} stroke-linecap="round"/>`;
+  const FILL='rgba(45,106,79,0.07)',RFILL='rgba(45,106,79,0.04)';
+  let g='';
+  // faces: right (lighter), top, front
+  g+=face([FTR,BTR,BBR,FBR],RFILL)+face([FTL,FTR,BTR,BTL],FILL)+face([FTL,FTR,FBR,FBL],FILL);
+  // hidden (back) edges — dashed, meeting at the hidden corner BBL
+  g+=seg(BBL,BBR,true)+seg(BBL,BTL,true)+seg(BBL,FBL,true);
+  // visible edges — solid
+  g+=seg(FTL,FTR)+seg(FTR,FBR)+seg(FBR,FBL)+seg(FBL,FTL);  // front face
+  g+=seg(FTR,BTR)+seg(BTR,BTL)+seg(BTL,FTL);               // top face
+  g+=seg(BTR,BBR)+seg(FBR,BBR);                            // right face
+  // equal-side ticks on the three visible edge directions (cube only)
+  if(isCube) g+=TICK(FBL,FBR)+TICK(FTR,FBR)+TICK(FTR,BTR);
+  // labels
+  g+=T((FBL[0]+FBR[0])/2,FBR[1]+16,`a = ${lbl.a}`,lbl.a==='?');     // a — below bottom edge
+  if(!isCube){
+    const bx=FX+W+dx+14,by=FY+dy+H/2,unkB=lbl.b==='?';             // b — right side, rotated
+    g+=`<text x="${bx.toFixed(1)}" y="${by.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="13" fill="${unkB?'var(--accent)':'var(--text)'}" font-weight="${unkB?700:500}" transform="rotate(-90,${bx.toFixed(1)},${by.toFixed(1)})">b = ${lbl.b}</text>`;
+    const cx=FX+W+dx/2-9,cy=FY+dy/2-9,unkC=lbl.c==='?';            // c — along the top depth edge (45°)
+    g+=`<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="13" fill="${unkC?'var(--accent)':'var(--text)'}" font-weight="${unkC?700:500}" transform="rotate(-45,${cx.toFixed(1)},${cy.toFixed(1)})">c = ${lbl.c}</text>`;
+  }
+  return svgWrap(g);
+}
+function vizCuboid(aLbl,bLbl,cLbl,aVal,bVal,cVal){
+  const DEF=7;                                          // fallback size for an unknown edge
+  return boxSVG(aVal!=null?aVal:DEF,bVal!=null?bVal:DEF,cVal!=null?cVal:DEF,
+                {a:aLbl,b:bLbl,c:cLbl},false);
+}
+function vizCube(aLbl){return boxSVG(6,6,6,{a:aLbl},true)}
+
+// ─── init ─────────────────────────────────────────────
+renderGroups();
+</script>
+<script data-goatcounter="https://matek4.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

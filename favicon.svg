@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#40916c"/>
+      <stop offset="100%" stop-color="#1b4332"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="none" stroke="#52b788" stroke-width="1.5" opacity="0.5"/>
+  <!-- Square root / math symbol -->
+  <path d="M14 34 L20 34 L25 46 L34 16 L50 16"
+        fill="none" stroke="#f0f7f4" stroke-width="5.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
