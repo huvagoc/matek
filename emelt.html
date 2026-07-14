@@ -1702,7 +1702,7 @@ const LOGARITMUSTPL=[
   // log_b(b^k) = k
   ()=>{
     const b=randChoice([2,3,5,10]), k=randInt(2,5);
-    return arith(`Mennyi log${sub(b)} ${Math.pow(b,k)}?  (azaz hányadikra kell emelni ${b}-t, hogy ${Math.pow(b,k)}-t kapjunk)`, k, '');
+    return arith(`Mennyi log${sub(b)} ${Math.pow(b,k)}?`, k, '');
   },
   // 10-es alapú (lg)
   ()=>{
