@@ -1156,7 +1156,7 @@ const NEGYZETGYOKTPL=[
   ()=>{
     const n=randInt(3,20);
     const target=n*n+randInt(1,2*n);
-    return arith(`√${target} nem egész szám. Mennyi az egész rész (alsó egészrész)?\n(${n}² = ${n*n},  ${n+1}² = ${(n+1)*(n+1)})`, n, '');
+    return arith(`√${target} nem egész szám. Mennyi az egész rész (alsó egészrész)?`, n, '');
   },
 ];
 
@@ -1583,7 +1583,7 @@ const KVARTILISTPL=[
     const arr=[]; let v=randInt(1,4);
     for(let i=0;i<7;i++){arr.push(v); v+=randInt(1,4);}
     // 7 elem: Q1 az alsó 3 elem mediánja = arr[1]
-    return arith(`Rendezett adatsor: ${arr.join(', ')}\nMennyi az alsó kvartilis (Q₁)?\n(a 7 elemű sor alsó felének mediánja)`, arr[1], '');
+    return arith(`Rendezett adatsor: ${arr.join(', ')}\nMennyi az alsó kvartilis (Q₁)?`, arr[1], '');
   },
 ];
 
@@ -2588,13 +2588,13 @@ GEO['SzinuszKoszinusz']=[
     // Eisenstein-hármasok (60°): mind ellenőrzött egész eredmény, k-szoros nagyítással
     const [a0,b0,c0]=randChoice([[3,8,7],[5,8,7],[7,15,13],[8,15,13]]);
     const k=randChoice([1,1,2,5]); const a=a0*k,b=b0*k,c=c0*k;
-    return geo('Háromszög (koszinusztétel)',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 60°.\nMennyi a harmadik oldal? (c² = a² + b² − 2ab·cos60°)`,String(c),'cm','c',null);
+    return geo('Háromszög',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 60°.\nMennyi a harmadik oldal?`,String(c),'cm','c',null);
   },
   // koszinusztétel 120°-os szögnél: c² = a²+b²+ab
   ()=>{
     const [a0,b0,c0]=randChoice([[3,5,7],[7,8,13],[5,16,19]]);
     const k=randChoice([1,1,2,5]); const a=a0*k,b=b0*k,c=c0*k;
-    return geo('Háromszög (koszinusztétel)',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 120°.\nMennyi a harmadik oldal? (c² = a² + b² + ab)`,String(c),'cm','c',null);
+    return geo('Háromszög',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 120°.\nMennyi a harmadik oldal?`,String(c),'cm','c',null);
   },
 ];
 

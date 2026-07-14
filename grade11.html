@@ -1153,7 +1153,7 @@ const NEGYZETGYOKTPL=[
   ()=>{
     const n=randInt(3,20);
     const target=n*n+randInt(1,2*n);
-    return arith(`√${target} nem egész szám. Mennyi az egész rész (alsó egészrész)?\n(${n}² = ${n*n},  ${n+1}² = ${(n+1)*(n+1)})`, n, '');
+    return arith(`√${target} nem egész szám. Mennyi az egész rész (alsó egészrész)?`, n, '');
   },
 ];
 
@@ -1354,7 +1354,7 @@ const HALMAZTPL=[
     const N=randChoice([60,90,120,150,210,300]);
     const cnt=N-(Math.floor(N/2)+Math.floor(N/3)+Math.floor(N/5))
               +(Math.floor(N/6)+Math.floor(N/10)+Math.floor(N/15))-Math.floor(N/30);
-    return arith(`Hány olyan pozitív egész szám van 1 és ${N} között, amelyik sem 2-vel, sem 3-mal, sem 5-tel nem osztható?\n(logikai szita)`, cnt, '');
+    return arith(`Hány olyan pozitív egész szám van 1 és ${N} között, amelyik sem 2-vel, sem 3-mal, sem 5-tel nem osztható?`, cnt, '');
   },
 ];
 
@@ -1587,7 +1587,7 @@ const KVARTILISTPL=[
     const arr=[]; let v=randInt(1,4);
     for(let i=0;i<7;i++){arr.push(v); v+=randInt(1,4);}
     // 7 elem: Q1 az alsó 3 elem mediánja = arr[1]
-    return arith(`Rendezett adatsor: ${arr.join(', ')}\nMennyi az alsó kvartilis (Q₁)?\n(a 7 elemű sor alsó felének mediánja)`, arr[1], '');
+    return arith(`Rendezett adatsor: ${arr.join(', ')}\nMennyi az alsó kvartilis (Q₁)?`, arr[1], '');
   },
 ];
 
@@ -1632,12 +1632,12 @@ const BINOMEGYUTTTPL=[
   // binomiális tétel: (a+b)^n k-adik tagjának együtthatója = C(n,k)
   ()=>{
     const n=randInt(4,7), k=randInt(1,n-1);
-    return arith(`Az (x + 1)^${n} kifejtésében mennyi az x^${k} tag együtthatója?\n(binomiális tétel: C(${n}, ${k}))`, nCr(n,k), '');
+    return arith(`Az (x + 1)^${n} kifejtésében mennyi az x^${k} tag együtthatója?`, nCr(n,k), '');
   },
   // Pascal-háromszög sor összege = 2^n
   ()=>{
     const n=randInt(3,7);
-    return arith(`Mennyi a binomiális együtthatók összege: C(${n},0) + C(${n},1) + … + C(${n},${n})?\n(a Pascal-háromszög ${n}. sorának összege)`, Math.pow(2,n), '');
+    return arith(`Mennyi a binomiális együtthatók összege: C(${n},0) + C(${n},1) + … + C(${n},${n})?`, Math.pow(2,n), '');
   },
 ];
 
@@ -1655,7 +1655,7 @@ const PERMISMTPL=[
     const freq={}; for(const ch of w) freq[ch]=(freq[ch]||0)+1;
     let denom=1; for(const k in freq) denom*=fact(freq[k]);
     const ans=fact(w.length)/denom;
-    return arith(`Hányféle sorrendben rakhatók ki a(z) „${w}” szó betűi?\n(ismétléses permutáció)`, ans, 'féleképpen');
+    return arith(`Hányféle sorrendben rakhatók ki a(z) „${w}” szó betűi?`, ans, 'féleképpen');
   },
   ()=>{
     const a=randInt(2,4), b=randInt(2,4);
@@ -1706,7 +1706,7 @@ const LOGARITMUSTPL=[
   ()=>{
     const b=randChoice([2,3]), x=randInt(2,4), y=randInt(2,4);
     // log_b(b^x · b^y) = x+y
-    return arith(`Mennyi log${sub(b)}(${Math.pow(b,x)} · ${Math.pow(b,y)})?\n(logaritmus azonosság: log(a·b) = log a + log b)`, x+y, '');
+    return arith(`Mennyi log${sub(b)}(${Math.pow(b,x)} · ${Math.pow(b,y)})?`, x+y, '');
   },
 ];
 
@@ -1725,7 +1725,7 @@ const OSZTOKSZAMATPL=[
     // n = 2^a · 3^b → osztók száma (a+1)(b+1)
     const a=randInt(1,4), b=randInt(1,3);
     const n=Math.pow(2,a)*Math.pow(3,b);
-    return arith(`Hány pozitív osztója van a ${n} számnak?\n(${n} = 2${SUP[a]||'^'+a} · 3${SUP[b]||'^'+b}, az osztók száma (a+1)(b+1))`, (a+1)*(b+1), 'osztó');
+    return arith(`Hány pozitív osztója van a ${n} számnak?`, (a+1)*(b+1), 'osztó');
   },
   ()=>{
     const p=randChoice([2,3,5]), a=randInt(2,5);
@@ -1755,7 +1755,7 @@ const DERIVALASTPL=[
   // deriváltfüggvény együtthatója: f(x)=ax^n → f'(x)=n·a·x^(n-1)
   ()=>{
     const a=randInt(2,6), n=randInt(2,4);
-    return textArith(`Mi az f(x) = ${a}x${SUP[n]||'^'+n} függvény deriváltjának főegyütthatója?\n(f'(x) = n·a·x^(n−1))`, String(a*n), '');
+    return textArith(`Mi az f(x) = ${a}x${SUP[n]||'^'+n} függvény deriváltjának főegyütthatója?`, String(a*n), '');
   },
 ];
 
@@ -1765,7 +1765,7 @@ const SZELSOERTEKTPL=[
   ()=>{
     const a=randChoice([1,2,3]), h=randInt(-4,4); // h a szélsőérték helye
     const b=-2*a*h; // így x* = −b/(2a) = h
-    return textArith(`Az f(x) = ${a}x² ${b<0?'−':'+'} ${Math.abs(b)}x + 5 függvénynek hol van a szélsőértéke?\n(x = −b/(2a))\nAdd meg a szélsőérték x helyét!`, String(h), '');
+    return textArith(`Az f(x) = ${a}x² ${b<0?'−':'+'} ${Math.abs(b)}x + 5 függvénynek hol van a szélsőértéke?\nAdd meg a szélsőérték x helyét!`, String(h), '');
   },
 ];
 
@@ -1775,17 +1775,17 @@ const INTEGRALTPL=[
   // ∫₀ᵇ 3x² dx = b³
   ()=>{
     const b=randInt(2,6);
-    return textArith(`Határozd meg a határozott integrált:\n∫₀${sup(b)} 3x² dx = ?\n(a 3x² primitív függvénye x³)`, String(Math.pow(b,3)), '');
+    return textArith(`Határozd meg a határozott integrált:\n∫₀${sup(b)} 3x² dx = ?`, String(Math.pow(b,3)), '');
   },
   // ∫ₐᵇ 2x dx = b² − a²
   ()=>{
     const a=randInt(1,4), b=randInt(a+1,7);
-    return textArith(`Határozd meg a határozott integrált:\n∫${sub(a)}${sup(b)} 2x dx = ?\n(a 2x primitív függvénye x²)`, String(b*b-a*a), '');
+    return textArith(`Határozd meg a határozott integrált:\n∫${sub(a)}${sup(b)} 2x dx = ?`, String(b*b-a*a), '');
   },
   // ∫ₐᵇ c dx = c(b−a)
   ()=>{
     const c=randInt(2,6), a=randInt(0,3), b=randInt(a+2,8);
-    return textArith(`Határozd meg a határozott integrált:\n∫${sub(a)}${sup(b)} ${c} dx = ?\n(konstans integrálja)`, String(c*(b-a)), '');
+    return textArith(`Határozd meg a határozott integrált:\n∫${sub(a)}${sup(b)} ${c} dx = ?`, String(c*(b-a)), '');
   },
 ];
 
@@ -1829,7 +1829,7 @@ const BINOMELOSZLASTPL=[
   ()=>{
     const n=randInt(3,5), k=randInt(1,n-1);
     const num=nCr(n,k), den=Math.pow(2,n);
-    return fracEx(`Egy szabályos érmét ${n}-szer feldobunk. Mennyi a valószínűsége, hogy pontosan ${k}-szor lesz fej?\n(P = C(${n},${k}) / 2^${n}, add meg törtként)`, num, den);
+    return fracEx(`Egy szabályos érmét ${n}-szer feldobunk. Mennyi a valószínűsége, hogy pontosan ${k}-szor lesz fej?\n(add meg törtként)`, num, den);
   },
 ];
 
@@ -1883,7 +1883,7 @@ const TRIGVALOSTPL=[
   ()=>{
     const cases=[{deg:180,rad:'π'},{deg:90,rad:'π/2'},{deg:60,rad:'π/3'},{deg:45,rad:'π/4'},{deg:30,rad:'π/6'}];
     const c=randChoice(cases);
-    return textArith(`A(z) ${c.deg}°-hoz tartozó radián: (k/m)·π alakban. Mennyi a nevező (m), ha a számláló 1?\n(pl. 30° = (1/6)·π → 6)`, String(c.deg===180?1:Math.round(180/c.deg)), '');
+    return textArith(`A(z) ${c.deg}°-hoz tartozó radián: (k/m)·π alakban. Mennyi a nevező (m), ha a számláló 1?`, String(c.deg===180?1:Math.round(180/c.deg)), '');
   },
   // nevezetes szög szögfüggvényértéke (csak tiszta értékek: 0, 1, 0.5)
   ()=>{
@@ -2886,13 +2886,13 @@ GEO['SzinuszKoszinusz']=[
     // Eisenstein-hármasok (60°): mind ellenőrzött egész eredmény, k-szoros nagyítással
     const [a0,b0,c0]=randChoice([[3,8,7],[5,8,7],[7,15,13],[8,15,13]]);
     const k=randChoice([1,1,2,5]); const a=a0*k,b=b0*k,c=c0*k;
-    return geo('Háromszög (koszinusztétel)',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 60°.\nMennyi a harmadik oldal? (c² = a² + b² − 2ab·cos60°)`,String(c),'cm','c',null);
+    return geo('Háromszög',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 60°.\nMennyi a harmadik oldal?`,String(c),'cm','c',null);
   },
   // koszinusztétel 120°-os szögnél: c² = a²+b²+ab
   ()=>{
     const [a0,b0,c0]=randChoice([[3,5,7],[7,8,13],[5,16,19]]);
     const k=randChoice([1,1,2,5]); const a=a0*k,b=b0*k,c=c0*k;
-    return geo('Háromszög (koszinusztétel)',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 120°.\nMennyi a harmadik oldal? (c² = a² + b² + ab)`,String(c),'cm','c',null);
+    return geo('Háromszög',`Egy háromszög két oldala ${a} cm és ${b} cm, a közbezárt szög 120°.\nMennyi a harmadik oldal?`,String(c),'cm','c',null);
   },
 ];
 
