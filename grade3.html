@@ -315,7 +315,7 @@ function lcm(a,b){return Math.abs(a*b)/gcd(a,b);}
 function parseFrac(s){
   s=String(s).trim();
   const mx=s.match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
-  if(mx){const w=parseInt(mx[1]),n=parseInt(mx[2]),d=parseInt(mx[3]);if(d===0)return null;return{n:w*d+n,d};}
+  if(mx){const w=parseInt(mx[1]),n=parseInt(mx[2]),d=parseInt(mx[3]);if(d===0)return null;return{n:(w<0?w*d-n:w*d+n),d};}
   const fx=s.match(/^(-?\d+)\/(\d+)$/);
   if(fx){const n=parseInt(fx[1]),d=parseInt(fx[2]);if(d===0)return null;return{n,d};}
   const iv=parseInt(s);if(!isNaN(iv))return{n:iv,d:1};
@@ -329,10 +329,10 @@ function checkFracAnswer(raw,ansN,ansD){
   const s=String(raw).trim();
   let un,ud;
   const mx=s.match(/^(-?\d+)\s+(\d+)\/(\d+)$/);
-  if(mx){const w=parseInt(mx[1]),n=parseInt(mx[2]),d=parseInt(mx[3]);if(d===0)return'wrong';un=w*d+n;ud=d;}
+  if(mx){const w=parseInt(mx[1]),n=parseInt(mx[2]),d=parseInt(mx[3]);if(d===0)return'wrong';un=w<0?w*d-n:w*d+n;ud=d;} // negative mixed number: -1 3/4 means -(1+3/4), not w*d+n
   else{const fx=s.match(/^(-?\d+)\/(\d+)$/);
     if(fx){un=parseInt(fx[1]);ud=parseInt(fx[2]);if(ud===0)return'wrong';}
-    else{const iv=parseInt(s);if(!isNaN(iv)){un=iv;ud=1;}else return'wrong';}}
+    else{const iv=/^-?\d+$/.test(s)?parseInt(s):NaN;if(!isNaN(iv)){un=iv;ud=1;}else return'wrong';}} // reject trailing garbage like "5xyz"
   if(!fracEq(un,ud,ansN,ansD))return'wrong';
   if(gcd(Math.abs(un),ud)===1)return'exact';
   return'unsimplified';
@@ -360,6 +360,7 @@ function decodeWorksheetCode(code){
   if(!m)return null;
   const seed=parseInt(m[1],16);
   const mask=parseInt(m[2],16);
+  if(mask>=(1<<GROUPS.length))return null; // bits beyond defined groups → mistyped code
   const groups=new Set();
   GROUPS.forEach((g,i)=>{if(mask&(1<<i))groups.add(g.id);});
   if(!groups.size)return null;
@@ -622,8 +623,8 @@ const WN=['Pista','Kati','Bence','Anna','Péter','Zsuzsi','Dani','Lili','Ádám'
 function wn(){return randChoice(WN)}
 function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 
-const FRAC_SUBJ={2:'fele',3:'harmada',4:'negyede',5:'ötöde'};
-const FRAC_ACC ={2:'felét',3:'harmadát',4:'negyedét',5:'ötödét'};
+const FRAC_SUBJ={2:'fele',3:'harmada',4:'negyede',5:'ötöde',10:'tizede'};
+const FRAC_ACC ={2:'felét',3:'harmadát',4:'negyedét',5:'ötödét',10:'tizedét'};
 
 const WORD_T=[
   // 1. Vásárlás: összköltség
@@ -938,9 +939,9 @@ const TORTTPL=[
     const den=randChoice([2,3,4,5,10]);
     const num=1;
     const den2=den+randInt(1,3);
-    return{isArith:true,isGeo:false,isWord:false,
+    return{isArith:true,isGeo:false,isWord:false,isFrac:true,
            srcStr:`Melyik a nagyobb?\n${num}/${den}  vagy  ${num}/${den2}`,
-           ans:`${num}/${den}`,to:'',goUp:true};
+           ans:`${num}/${den}`,ansN:num,ansD:den,to:'',goUp:true};
   },
   ()=>{
     const n=randInt(1,4),d=randChoice([2,4,5,10]);
@@ -990,6 +991,16 @@ const SOROZATTPL=[
     return arith(`Melyik szám hiányzik? ${terms.join(', ')}`, start+2*diff, '');
   },
 ];
+// "-val/-vel" (instrumental) assimilates fully to the number word's final
+// consonant instead of taking a linking vowel like most other suffixes.
+function instrSuffix(n){return({2:'vel',3:'mal',4:'gyel',5:'tel'})[n]||'vel';}
+// "-t" (accusative) takes a vowel-harmony-selected linking vowel (or none
+// after a vowel-final number word like kettő/tizenkettő).
+function accSuffix(n){
+  const UNIT_ACC={0:'t',1:'et',2:'t',3:'at',4:'et',5:'öt',6:'ot',7:'et',8:'at',9:'et'};
+  const u=n%10;
+  return u===0?'et':UNIT_ACC[u];
+}
 const SZABALYTPL=[
   ()=>{
     const a=randInt(1,10);
@@ -997,12 +1008,12 @@ const SZABALYTPL=[
   },
   ()=>{
     const mul=randInt(2,5);
-    return arith(`A szabály: minden számot ${mul}-vel szorzunk.\nHa a bemenet 6, mi a kimenet?`, 6*mul, '');
+    return arith(`A szabály: minden számot ${mul}-${instrSuffix(mul)} szorzunk.\nHa a bemenet 6, mi a kimenet?`, 6*mul, '');
   },
   ()=>{
     const add=randInt(3,15);
     const x=randInt(5,20);
-    return arith(`Szabály: minden számhoz hozzáadunk ${add}-t.\nHa a bemenet ${x}, mi a kimenet?`, x+add, '');
+    return arith(`Szabály: minden számhoz hozzáadunk ${add}-${accSuffix(add)}.\nHa a bemenet ${x}, mi a kimenet?`, x+add, '');
   },
   ()=>{
     const mul=randChoice([2,3,4,5]);
@@ -1116,6 +1127,10 @@ function buildQuiz(){
 
 // ─── quiz render ──────────────────────────────────────
 function startQuiz(){
+  // Fresh entropy for every on-screen quiz — without this, _seed stays at its
+  // initial value (1) or at whatever the last code lookup left behind, so
+  // every user would get the exact same 20 questions.
+  _seed=((Math.random()*0xFFFFFFFF)|0)||1;
   exercises=buildQuiz();qIdx=0;score=0;
   showScreen('quiz');renderQ();
 }
