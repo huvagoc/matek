@@ -732,228 +732,149 @@ const WN=['Pista','Kati','Bence','Anna','Péter','Zsuzsi','Dani','Lili','Ádám'
 function wn(){return randChoice(WN)}
 function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 
-const FRAC_SUBJ={2:'fele',3:'harmada',4:'negyede',5:'ötöde'};
-const FRAC_ACC ={2:'felét',3:'harmadát',4:'negyedét',5:'ötödét'};
-
+// 10. osztály: a szöveges feladatok e file saját témaköreire épülnek
+// (másodfokú egyenlet a fő hangsúly — NAT 2020 gimnáziumi kerettanterv szerint).
 const WORD_T=[
-  // 1. Út = sebesség × idő
-  {unit:'km',
-   gen(){const v=randChoice([30,40,50,60,80,100,120]),t=randChoice([1,2,3,4,1.5,2.5]);return{v,t,ans:v*t,name:wn()}},
+  // 1. Másodfokú: szomszédos egész számok szorzata
+  {unit:'',
+   gen(){const n=randInt(2,12);return{n,big:n+1,prod:n*(n+1),ans:n+1,name:wn()}},
    ph:[
-    d=>`Egy autó ${d.v} km/h sebességgel halad. Hány km utat tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`Egy vonat óránként ${d.v} km-t tesz meg. Mekkora utat jár be ${hf(d.t)} óra alatt?`,
-    d=>`${d.name} kerékpárral ${d.v} km/h sebességgel halad. Hány km-t tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`Egy hajó ${d.v} km/h sebességgel halad a folyón. Mekkora utat tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`Egy busz ${d.v} km/h átlagsebességgel közlekedik. Hány km-t tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`${d.name} apja autóval ${d.v} km/h sebességgel utazik. Hány km-t tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`Egy versenyautó ${d.v} km/h sebességgel száguld. Mekkora utat tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`Egy teherautó ${d.v} km/h sebességgel szállít. Hány km utat tesz meg ${hf(d.t)} óra alatt?`,
-    d=>`${d.name} futással ${d.v} km/h sebességgel halad. Hány km-t fut meg ${hf(d.t)} óra alatt?`,
-    d=>`Egy motorcsónak ${d.v} km/h sebességgel szel át a tavon. Mekkora utat tesz meg ${hf(d.t)} óra alatt?`,
-  ]},
+    d=>`Két szomszédos pozitív egész szám szorzata ${d.prod}. Melyik a nagyobbik szám?`,
+    d=>({text:`Két egymást követő pozitív egész szám szorzata ${d.prod}. Add meg a kisebbik számot!`,ans:d.n}),
+    d=>`${d.name} két szomszédos egész számra gondolt, amelyeknek a szorzata ${d.prod}. Melyik a nagyobbik szám?`,
+    d=>({text:`Két szomszédos egész szám szorzata ${d.prod}. Mekkora a kisebbik szám?`,ans:d.n}),
+    d=>`Egy feladatban két egymást követő pozitív egész szám szorzata ${d.prod}. Mennyi a nagyobbik szám?`,
+    d=>({text:`Két szomszédos pozitív egész szám szorzata ${d.prod}. Melyik a kisebbik közülük?`,ans:d.n}),
+    d=>`Két egymást követő egész szám szorzata ${d.prod}. Határozd meg a nagyobbik számot!`,
+   ]},
 
-  // 2. Sebesség = út / idő
-  {unit:'km/h',
-   gen(){const v=randChoice([30,40,50,60,80,100,120]),t=randChoice([1,2,3,4,5]);return{v,t,d:v*t,ans:v,name:wn()}},
+  // 2. Másodfokú: téglalap kerülete és területe adott
+  {unit:'cm',
+   gen(){
+    let a=randInt(2,15),b;do{b=randInt(2,15);}while(b===a);
+    const s=Math.min(a,b),l=Math.max(a,b);
+    return{s,l,K:2*(s+l),T:s*l,ans:s,name:wn()};
+   },
    ph:[
-    d=>`Egy autó ${hf(d.t)} óra alatt ${d.d} km-t tett meg. Mekkora az átlagsebessége?`,
-    d=>`Egy vonat ${d.d} km-t tett meg ${hf(d.t)} óra alatt. Hány km/h a sebessége?`,
-    d=>`${d.name} kerékpárral ${hf(d.t)} óra alatt ${d.d} km-t tett meg. Mekkora az átlagsebessége?`,
-    d=>`Egy busz ${hf(d.t)} óra alatt megtette a ${d.d} km-es utat. Mekkora volt az átlagsebessége?`,
-    d=>`${d.name} apja autóval ${d.d} km-t tett meg ${hf(d.t)} óra alatt. Hány km/h volt az átlagsebessége?`,
-    d=>`Egy hajó ${hf(d.t)} óra alatt ${d.d} km-t evezett. Mekkora volt a sebessége?`,
-    d=>`${d.name} futással ${hf(d.t)} óra alatt ${d.d} km-t tett meg. Mekkora volt az átlagsebessége?`,
-    d=>`Egy versenyautó ${d.d} km-t tett meg ${hf(d.t)} óra alatt. Mekkora volt a sebessége?`,
-    d=>`Egy teherautó ${hf(d.t)} óra alatt ${d.d} km-t szállított. Mekkora az átlagsebessége?`,
-    d=>`${d.name} iskolabusza ${d.d} km-es utat tesz meg ${hf(d.t)} óra alatt. Hány km/h az átlagsebessége?`,
-  ]},
+    d=>`Egy téglalap kerülete ${d.K} cm, területe ${d.T} cm². Mekkora a rövidebb oldala?`,
+    d=>({text:`Egy téglalap kerülete ${d.K} cm, területe ${d.T} cm². Mekkora a hosszabb oldala?`,ans:d.l}),
+    d=>({text:`Egy téglalap alakú szoba kerülete ${d.K} m, területe ${d.T} m². Mekkora a szoba rövidebbik oldala?`,unit:'m'}),
+    d=>({text:`Egy téglalap alakú telek kerülete ${d.K} m, területe ${d.T} m². Mekkora a hosszabb oldala?`,unit:'m',ans:d.l}),
+    d=>`${d.name} egy téglalap alakú asztalt tervez: kerülete ${d.K} cm, területe ${d.T} cm². Mekkora az asztal rövidebbik oldala?`,
+    d=>({text:`Egy téglalap alakú tábla kerülete ${d.K} cm, területe ${d.T} cm². Mekkora a tábla hosszabb oldala?`,ans:d.l}),
+    d=>({text:`Egy téglalap alakú park kerülete ${d.K} m, területe ${d.T} m². Mekkora a park rövidebbik oldala?`,unit:'m'}),
+   ]},
 
-  // 3. Idő = út / sebesség
-  {unit:'óra',
-   gen(){const v=randChoice([30,40,50,60,80,100,120]),t=randChoice([1,2,3,4,1.5,2.5]);return{v,t,d:v*t,ans:t,name:wn()}},
+  // 3. Másodfokú: két szám összege és szorzata adott
+  {unit:'',
+   gen(){
+    let x=randInt(1,15),y;do{y=randInt(1,15);}while(y===x);
+    const s=x+y,p=x*y;
+    return{s,p,bigger:Math.max(x,y),smaller:Math.min(x,y),ans:Math.max(x,y),name:wn()};
+   },
    ph:[
-    d=>`Egy autó ${d.v} km/h sebességgel halad. Hány óra alatt tesz meg ${d.d} km-t?`,
-    d=>`Egy vonat ${d.v} km/h sebességgel közlekedik. Hány óra alatt ér a ${d.d} km-re lévő városba?`,
-    d=>`${d.name} kerékpárral ${d.v} km/h sebességgel halad. Hány óra alatt tesz meg ${d.d} km-t?`,
-    d=>`Egy busz ${d.v} km/h sebességgel közlekedik. Hány óra alatt teszi meg a ${d.d} km-es útvonalat?`,
-    d=>`Egy hajó ${d.v} km/h sebességgel halad. Hány óra alatt tesz meg ${d.d} km-t?`,
-    d=>`${d.name} apja ${d.v} km/h sebességgel vezet. Hány óra alatt ér a ${d.d} km-re lévő városba?`,
-    d=>`Egy teherautó ${d.v} km/h sebességgel halad. Hány óra alatt tesz meg ${d.d} km-t?`,
-    d=>`Egy versenyautó ${d.v} km/h sebességgel halad. Hány óra alatt tesz meg ${d.d} km utat?`,
-    d=>`${d.name} futással ${d.v} km/h sebességgel halad. Hány óra alatt fut meg ${d.d} km-t?`,
-    d=>`Egy motorcsónak ${d.v} km/h sebességgel halad. Hány óra alatt tesz meg ${d.d} km-t?`,
-  ]},
+    d=>`${d.name} két pozitív egész számra gondolt. Összegük ${d.s}, szorzatuk ${d.p}. Melyik a nagyobbik szám?`,
+    d=>({text:`Két pozitív egész szám összege ${d.s}, szorzata ${d.p}. Add meg a kisebbik számot!`,ans:d.smaller}),
+    d=>`Két szám összege ${d.s}, szorzatuk ${d.p}, mindkettő pozitív egész. Melyik a nagyobbik?`,
+    d=>({text:`${d.name} két számra gondolt: összegük ${d.s}, szorzatuk ${d.p}. Melyik a kisebbik szám?`,ans:d.smaller}),
+    d=>`Egy feladatban két pozitív egész szám összege ${d.s}, szorzata ${d.p}. Mekkora a nagyobbik szám?`,
+    d=>`Két pozitív egész szám összege ${d.s}, szorzata ${d.p}. Melyik a nagyobbik közülük?`,
+    d=>({text:`${d.name} két egész számot választott: összegük ${d.s}, szorzatuk ${d.p}. Mekkora a kisebbik szám?`,ans:d.smaller}),
+   ]},
 
-  // 4. Vásárlás: összköltség
+  // 4. Másodfokú: téglalap oldalkülönbsége és területe adott
+  {unit:'cm',
+   gen(){const s=randInt(2,15),diff=randInt(1,8),l=s+diff;return{s,l,diff,T:s*l,ans:s,name:wn()}},
+   ph:[
+    d=>`Egy téglalap egyik oldala ${d.diff} cm-rel hosszabb a másiknál. A téglalap területe ${d.T} cm². Mekkora a rövidebb oldal?`,
+    d=>({text:`Egy téglalap alakú kert egyik oldala ${d.diff} m-rel hosszabb a másiknál. A kert területe ${d.T} m². Mekkora a rövidebb oldal?`,unit:'m'}),
+    d=>`${d.name} egy téglalap alakú szőnyeget vásárol, amelynek egyik oldala ${d.diff} cm-rel hosszabb a másiknál. Területe ${d.T} cm². Mekkora a rövidebb oldal?`,
+    d=>({text:`Egy téglalap alakú tábla egyik oldala ${d.diff} cm-rel hosszabb a másiknál, területe ${d.T} cm². Mekkora a hosszabb oldal?`,ans:d.l}),
+    d=>({text:`Egy téglalap alakú telek egyik oldala ${d.diff} m-rel hosszabb a másiknál. Területe ${d.T} m². Mekkora a rövidebb oldal?`,unit:'m'}),
+    d=>`Egy téglalap alakú medence egyik oldala ${d.diff} cm-rel hosszabb a másiknál, területe ${d.T} cm². Mekkora a rövidebb oldal?`,
+   ]},
+
+  // 5. Hasonlóság: árnyékhossz (hasonló háromszögek)
+  {unit:'m',
+   gen(){
+    const pairs=[[2,1],[3,2],[4,3],[5,3],[5,4],[3,1],[5,2]];
+    const[a,b]=randChoice(pairs);
+    const m=randInt(2,6);let p=randInt(2,6);while(p===m)p=randInt(2,6);
+    return{treeH:a*m,treeS:b*m,persH:a*p,persS:b*p,ans:b*p,name:wn()};
+   },
+   ph:[
+    d=>`Egy ${d.treeH} m magas fa árnyéka ${d.treeS} m hosszú. Ugyanekkor egy ${d.persH} m magas emlékmű árnyéka hány méter hosszú?`,
+    d=>({text:`Egy ${d.treeH} m magas oszlop árnyéka ${d.treeS} m. Egy ${d.persH} m magas templomtorony árnyéka ugyanekkor hány méter?`}),
+    d=>`${d.name} megméri: egy ${d.treeH} m magas fa árnyéka ${d.treeS} m. Egy ${d.persH} m magas zászlórúd árnyéka ugyanabban a pillanatban hány méter?`,
+    d=>`Egy ${d.treeH} m magas ház árnyéka ${d.treeS} m hosszú. Egy ${d.persH} m magas lámpaoszlop árnyéka hány méter ugyanekkor?`,
+    d=>`Egy ${d.treeH} m magas fa ${d.treeS} m hosszú árnyékot vet. Egy ${d.persH} m magas villanyoszlop árnyéka hány méter hosszú ugyanabban az időpontban?`,
+    d=>`${d.name} egy ${d.treeH} m magas zászlórúd ${d.treeS} m hosszú árnyékát méri le. Egy ${d.persH} m magas fa árnyéka hány méter ugyanekkor?`,
+   ]},
+
+  // 6. Négyzetgyök: négyzet alakú terület oldala
+  {unit:'m',
+   gen(){const n=randInt(4,25);return{n,area:n*n,ans:n,name:wn()}},
+   ph:[
+    d=>`Egy négyzet alakú telek területe ${d.area} m². Hány méter az oldala?`,
+    d=>`Egy négyzet alakú szoba padlójának területe ${d.area} m². Milyen hosszú a szoba oldala?`,
+    d=>`${d.name} kertje négyzet alakú, területe ${d.area} m². Hány méter az oldala?`,
+    d=>`Egy négyzet alakú úszómedence alapterülete ${d.area} m². Mekkora az oldala?`,
+    d=>`Egy négyzet alakú park területe ${d.area} m². Hány méter hosszú az oldala?`,
+    d=>`Egy négyzet alakú terem padlózatának területe ${d.area} m². Mekkora a terem oldala?`,
+    d=>`${d.name} egy négyzet alakú szőnyeget vásárol, amelynek területe ${d.area} m². Milyen hosszú az oldala?`,
+   ]},
+
+  // 7. Hatványozás: kocka térfogata
+  {unit:'cm³',
+   gen(){const a=randInt(2,12);return{a,ans:a*a*a,name:wn()}},
+   ph:[
+    d=>`Egy kocka alakú doboz éle ${d.a} cm. Mekkora a térfogata?`,
+    d=>`Egy kocka alakú ajándékdoboz oldala ${d.a} cm. Hány cm³ a térfogata?`,
+    d=>`${d.name} egy kocka alakú játékkockát mér: éle ${d.a} cm. Mekkora a térfogata?`,
+    d=>`Egy kocka alakú tárolódoboz éle ${d.a} cm. Mennyi a térfogata?`,
+    d=>`Egy kocka alakú akvárium éle ${d.a} cm. Hány cm³ vizet tartalmazhat tele állapotban?`,
+    d=>`Egy kocka alakú raktárláda éle ${d.a} cm. Mekkora a térfogata?`,
+   ]},
+
+  // 8. Normálalak: nagy szám szokásos alakban
+  {unit:'',
+   gen(){const d=randInt(1,9),k=randInt(3,7);return{d,k,ans:d*Math.pow(10,k),name:wn()}},
+   ph:[
+    d=>({text:`Egy csillagászati könyvben szerepel, hogy egy bolygó Naptól mért távolsága kb. ${d.d}×10^${d.k} km. Írd fel ezt a számot szokásos (kiírt) alakban!`,unit:'km'}),
+    d=>({text:`Egy ország lakossága kb. ${d.d}×10^${d.k} fő. Hány fő ez pontosan, szokásos alakban felírva?`,unit:'fő'}),
+    d=>({text:`Egy vírus egy tenyészetben kb. ${d.d}×10^${d.k} darabra szaporodott el. Hány darab ez szokásos alakban?`,unit:'db'}),
+    d=>({text:`${d.name} egy cikkben olvassa, hogy egy tó térfogata kb. ${d.d}×10^${d.k} liter. Hány liter ez szokásos alakban felírva?`,unit:'liter'}),
+    d=>({text:`Egy vállalat éves bevétele kb. ${d.d}×10^${d.k} Ft. Mennyi ez pontosan, szokásos alakban?`,unit:'Ft'}),
+    d=>({text:`Egy adatközpont naponta kb. ${d.d}×10^${d.k} adatot dolgoz fel. Hány adat ez szokásos alakban felírva?`,unit:'db'}),
+   ]},
+
+  // 9. Valószínűség: golyóhúzás, százalékban kifejezett esély
+  {unit:'%',
+   gen(){
+    const total=randChoice([4,5,10,20,25,50]),red=randInt(1,total-1),pct=red*100/total;
+    if(!Number.isInteger(pct))return null;
+    return{total,red,blue:total-red,ans:pct,name:wn()};
+   },
+   ph:[
+    d=>`Egy dobozban ${d.total} golyó van, ebből ${d.red} piros. Hány százalék annak a valószínűsége, hogy pirosat húzunk?`,
+    d=>`${d.name} egy zsákból húz golyót. A zsákban ${d.total} golyó van, ${d.red} piros és ${d.blue} kék. Hány százalék eséllyel húz pirosat?`,
+    d=>`Egy urnában ${d.total} golyó van, ${d.red} piros, a többi kék. Hány százalék a valószínűsége, hogy pirosat húzunk?`,
+    d=>`Egy dobozban ${d.total} cédula van, közülük ${d.red} nyertes. Hány százalék eséllyel húzunk nyertes cédulát?`,
+    d=>`${d.name} osztályában ${d.total} tanuló van, közülük ${d.red} lány. Ha véletlenszerűen kiválasztunk egy tanulót, hány százalék eséllyel lesz lány?`,
+    d=>`Egy kalapban ${d.total} lottószelvény van, ${d.red} db nyerő. Hány százalék a nyerés valószínűsége egy húzásnál?`,
+   ]},
+
+  // 10. Vásárlás: összköltség (megtartott, egyszerű bemelegítő feladat)
   {unit:'Ft',
    gen(){const price=randChoice([50,80,100,120,150,200,250,300,400,500]),n=randInt(2,8);return{price,n,ans:price*n,name:wn()}},
    ph:[
     d=>`Egy füzet ${d.price} Ft. ${d.name} ${d.n} füzetet vesz. Mennyit fizet összesen?`,
-    d=>`Egy kifli ${d.price} Ft-ba kerül. ${d.name} anyukája ${d.n} kiflit vesz. Mennyi az összeg?`,
     d=>`Egy csomag keksz ${d.price} Ft. ${d.name} ${d.n} csomagot vásárol. Mennyibe kerül összesen?`,
     d=>`${d.name} ${d.n} darab ${d.price} Ft-os ceruzát vesz. Mennyi pénzt kell fizetnie?`,
     d=>`Egy szendvics ${d.price} Ft az iskolai büfében. ${d.n} tanuló vesz egy-egy szendvicset. Mennyit fizetnek összesen?`,
-    d=>`Egy doboz gyümölcslé ${d.price} Ft. ${d.name} anyukája ${d.n} dobozt vesz. Mennyibe kerül?`,
     d=>`${d.name} ${d.n} db ${d.price} Ft-os matricát vásárol. Mennyit fizet?`,
-    d=>`Egy alma ${d.price} Ft a piacon. ${d.name} ${d.n} almát vesz. Mennyi az összköltség?`,
     d=>`Egy zsemle ${d.price} Ft-ba kerül. ${d.name} ${d.n} zsemlét kér a pékségben. Mennyit fizet?`,
-    d=>`Egy toll ${d.price} Ft. Az osztályban ${d.n} tanuló vesz belőle egyet-egyet. Mennyit fizetnek összesen?`,
-  ]},
-
-  // 5. Vásárlás: visszajáró
-  {unit:'Ft',
-   gen(){
-    const price=(randInt(1,9)*100)+randChoice([0,0,50]);
-    const paid=Math.ceil((price+1)/500)*500;
-    if(paid===price)return null;
-    return{price,paid,ans:paid-price,name:wn()};
-   },
-   ph:[
-    d=>`${d.name} ${d.price} Ft-ért vásárol, és ${d.paid} Ft-tal fizet. Mennyi a visszajáró?`,
-    d=>`Egy könyv ${d.price} Ft-ba kerül. ${d.name} ${d.paid} Ft-ot ad a pénztárosnak. Mennyit kap vissza?`,
-    d=>`${d.name} ${d.price} Ft-ért vesz egy pólót, és ${d.paid} Ft-tal fizet. Mennyi visszajárót kap?`,
-    d=>`Az iskolai büfében ${d.name} ${d.price} Ft-ért vásárol, és ${d.paid} Ft-ot ad. Mennyi a visszajáró?`,
-    d=>`Egy játék ${d.price} Ft-ba kerül. ${d.name} ${d.paid} Ft-ot ad érte. Mennyit kap vissza?`,
-    d=>`${d.name} anyukája ${d.price} Ft-ért vásárol a piacon, és ${d.paid} Ft-tal fizet. Mennyi visszajárót kap?`,
-    d=>`Egy doboz festék ${d.price} Ft. ${d.name} ${d.paid} Ft-tal fizet. Mennyi a visszajáró?`,
-    d=>`${d.name} ${d.price} Ft-ért vesz egy üdítőt, és ${d.paid} Ft-ot ad. Mennyit kap vissza?`,
-    d=>`A pékségben ${d.name} ${d.price} Ft-ért vásárol, és ${d.paid} Ft-tal fizet. Mennyi a visszajáró?`,
-    d=>`Egy füzet ${d.price} Ft-ba kerül. ${d.name} ${d.paid} Ft-ot nyújt át a kasszánál. Mennyi visszajárót kap?`,
-  ]},
-
-  // 6. Törtrész
-  {unit:'db',
-   gen(){
-    const den=randChoice([2,3,4,5]),r=randInt(3,20),W=r*den;
-    if(W>300)return null;
-    return{W,den,r,ans:r,fs:FRAC_SUBJ[den],fa:FRAC_ACC[den],name:wn()};
-   },
-   ph:[
-    d=>({text:`${d.name} ${d.W} almát szedett le a fáról. Az almák ${d.fa} megette. Hányat evett meg?`,unit:'db'}),
-    d=>({text:`Egy osztályban ${d.W} tanuló van. A tanulók ${d.fs} lány. Hány lány van az osztályban?`,unit:'fő'}),
-    d=>({text:`${d.name} ${d.W} matricát gyűjtött. A matricák ${d.fs} focis. Hány focis matrica van?`,unit:'db'}),
-    d=>({text:`Egy könyvtárban ${d.W} könyv van. A könyvek ${d.fs} regény. Hány regény van?`,unit:'db'}),
-    d=>({text:`${d.name} anyukája naponta ${d.W} Ft-ot keres. Ennek ${d.fa} félreteszi. Mennyit tesz félre?`,unit:'Ft'}),
-    d=>({text:`${d.name} ${d.W} km-es utat tett meg. Az út ${d.fa} vonaton tette meg. Hány km-t tett meg vonaton?`,unit:'km'}),
-    d=>({text:`Egy tálban ${d.W} darab gyümölcs van. A gyümölcsök ${d.fs} alma. Hány alma van?`,unit:'db'}),
-    d=>({text:`Egy raktárban ${d.W} doboz van. A dobozok ${d.fs} üres. Hány üres doboz van?`,unit:'db'}),
-    d=>({text:`${d.name} ${d.W} oldalt olvasott. Az olvasott oldalak ${d.fa} mesés könyvből olvasta. Hány oldalt olvasott mesés könyvből?`,unit:'oldal'}),
-    d=>({text:`Egy farmon ${d.W} állat él. Az állatok ${d.fs} tehén. Hány tehén él a farmon?`,unit:'db'}),
-  ]},
-
-  // 7. Kerület szöveges
-  {unit:'m',
-   gen(){const a=randInt(3,20),b=randInt(3,20);return{a,b,ans:2*(a+b),name:wn()}},
-   ph:[
-    d=>`Egy téglalap alakú kert hossza ${d.a} m, szélessége ${d.b} m. Mekkora a kerülete?`,
-    d=>`Egy focipálya ${d.a} m hosszú és ${d.b} m széles. Mekkora a kerülete?`,
-    d=>`${d.name} szobájának hossza ${d.a} m, szélessége ${d.b} m. Mekkora a szoba kerülete?`,
-    d=>`Egy téglalap alakú tó hossza ${d.a} m, szélessége ${d.b} m. Mekkora a tó kerülete?`,
-    d=>`Egy virágágy ${d.a} m hosszú és ${d.b} m széles. Mekkora a kerülete?`,
-    d=>({text:`Egy könyvborító ${d.a} cm hosszú és ${d.b} cm széles. Mekkora a kerülete?`,unit:'cm'}),
-    d=>`Egy telek hossza ${d.a} m, szélessége ${d.b} m. Mekkora a telek kerülete?`,
-    d=>({text:`Egy téglalap alakú asztal ${d.a} cm hosszú és ${d.b} cm széles. Mekkora a kerülete?`,unit:'cm'}),
-    d=>`${d.name} egy ${d.a} m × ${d.b} m-es kertet akar körbekeríteni. Mekkora kerítésre van szüksége?`,
-    d=>`Egy park ${d.a} m hosszú és ${d.b} m széles. ${d.name} körbesétálja. Hány métert sétál?`,
-  ]},
-
-  // 8. Terület szöveges
-  {unit:'m²',
-   gen(){const a=randInt(3,20),b=randInt(3,20);return{a,b,ans:a*b,name:wn()}},
-   ph:[
-    d=>`Egy téglalap alakú szoba hossza ${d.a} m, szélessége ${d.b} m. Mekkora a területe?`,
-    d=>`Egy kert ${d.a} m hosszú és ${d.b} m széles. Hány m² a területe?`,
-    d=>`Egy focipálya ${d.a} m × ${d.b} m méretű. Mekkora a területe?`,
-    d=>`${d.name} szobájának hossza ${d.a} m, szélessége ${d.b} m. Hány m² a szoba területe?`,
-    d=>({text:`Egy könyvborító ${d.a} cm hosszú és ${d.b} cm széles. Mekkora a területe?`,unit:'cm²'}),
-    d=>`Egy telek ${d.a} m hosszú és ${d.b} m széles. Hány m² a telek területe?`,
-    d=>`Egy téglalap alakú tó ${d.a} m × ${d.b} m méretű. Mekkora a területe?`,
-    d=>`Egy virágágy ${d.a} m hosszú és ${d.b} m széles. Hány m² a területe?`,
-    d=>({text:`${d.name} egy ${d.a} cm × ${d.b} cm-es papírt rajzolt tele. Mekkora a papír területe?`,unit:'cm²'}),
-    d=>`${d.name} egy ${d.a} m × ${d.b} m méretű szőnyeget választ. Hány m² a szőnyeg?`,
-  ]},
-
-  // 9. Életkori feladatok – role-aware ages
-  {unit:'évvel',
-   gen(){
-    const type=randChoice(['sibling','parent','grandparent','generic','teacher']);
-    let older,younger,diff;
-    if(type==='sibling'){
-      younger=randInt(6,16); diff=randInt(1,8); older=younger+diff;
-    } else if(type==='parent'){
-      younger=randInt(8,20); diff=randInt(22,35); older=younger+diff;
-    } else if(type==='grandparent'){
-      younger=randInt(8,18); diff=randInt(45,60); older=younger+diff;
-    } else if(type==='teacher'){
-      younger=randInt(10,14); diff=randInt(15,35); older=younger+diff;
-    } else {
-      younger=randInt(8,40); diff=randInt(5,25); older=younger+diff;
-    }
-    return{type,diff,younger,older,ans:diff,name:wn(),name2:wn()};
-   },
-   ph:[
-    d=>{
-      const text = d.type==='sibling'    ? `${d.name} ${d.older} éves, húga ${d.younger} éves. Hány évvel idősebb ${d.name}?`
-                 : d.type==='parent'     ? `Apa ${d.older} éves, fia ${d.younger} éves. Hány évvel idősebb az apa?`
-                 : d.type==='grandparent'? `Nagyapa ${d.older} éves, unokája ${d.younger} éves. Hány évvel idősebb a nagyapa?`
-                 : d.type==='teacher'    ? `${d.name} tanára ${d.older} éves, ${d.name} ${d.younger} éves. Hány évvel idősebb a tanár?`
-                 :                         `${d.name} ${d.older} éves, barátja ${d.younger} éves. Hány évvel idősebb ${d.name}?`;
-      return {text, unit:'évvel'};
-    },
-    d=>{
-      let text, unit='évvel';
-      if(d.type==='sibling') text=`${d.name} ${d.older} éves, kisöccse ${d.younger} éves. Hány évvel idősebb ${d.name}?`;
-      else if(d.type==='parent') text=`Anya ${d.older} éves, lánya ${d.younger} éves. Hány évvel idősebb az anya?`;
-      else if(d.type==='grandparent') text=`Nagymama ${d.older} éves, unokája ${d.younger} éves. Hány évvel idősebb a nagymama?`;
-      else if(d.type==='teacher') text=`A tanár ${d.older} éves, a diák ${d.younger} éves. Hány évvel idősebb a tanár?`;
-      else { text=`${d.name} ${d.older} éves, osztálytársa ${d.younger} éves. Mekkora a korkülönbség?`; unit='év'; }
-      return {text, unit};
-    },
-    d=>({text:`${d.name} ${d.older} éves, ${d.name2} ${d.younger} éves. Hány évvel idősebb ${d.name}?`, unit:'évvel'}),
-    d=>{
-      if(d.type==='parent'||d.type==='grandparent') return {text:`${d.name} apja ${d.older} éves, ${d.name} ${d.younger} éves. Mekkora a korkülönbségük?`, unit:'év'};
-      return {text:`${d.name} ${d.older} éves, testvére ${d.younger} éves. Hány évvel idősebb ${d.name}?`, unit:'évvel'};
-    },
-    d=>({text:`Egy almafa ${d.older} éves, egy körteafa ${d.younger} éves. Hány évvel idősebb az almafa?`, unit:'évvel'}),
-    d=>({text:`Az iskola ${d.older} éve épült, a könyvtár ${d.younger} éve. Hány évvel régebbi az iskola?`, unit:'évvel'}),
-    d=>({text:`${d.name} ${d.older} éves, ${d.name2} ${d.younger} éves. Mekkora a kettő korkülönbsége?`, unit:'év'}),
-    d=>{
-      // Each relationship keeps its own generated age gap (diff) instead of
-      // defaulting non-siblings to "testvér" framing, which produced absurd
-      // results like a 50+ year gap between "siblings" for parent/grandparent data.
-      const text = d.type==='sibling'     ? `${d.name} ${d.younger} éves. Bátyja ${d.diff} évvel idősebb. Hány éves a bátyja?`
-                 : d.type==='parent'      ? `${d.name} ${d.younger} éves. Az apja ${d.diff} évvel idősebb nála. Hány éves az apa?`
-                 : d.type==='grandparent' ? `${d.name} ${d.younger} éves. A nagyapja ${d.diff} évvel idősebb nála. Hány éves a nagyapa?`
-                 : d.type==='teacher'     ? `${d.name} ${d.younger} éves. A tanára ${d.diff} évvel idősebb nála. Hány éves a tanár?`
-                 :                          `${d.name} ${d.younger} éves. Barátja ${d.diff} évvel idősebb nála. Hány éves a barátja?`;
-      return {text, unit:'év', ans: d.older};
-    },
-    d=>{
-      if(d.type==='parent'||d.type==='grandparent') return {text:`Az apa ${d.older} éves, fia ${d.younger} éves. Mekkora a korkülönbségük?`, unit:'év'};
-      return {text:`${d.name} ${d.older} éves, ${d.name2} ${d.younger} éves. Hány évvel idősebb ${d.name}?`, unit:'évvel'};
-    },
-    d=>({text:`Egy könyv ${d.older} éve jelent meg, egy másik ${d.younger} éve. Hány évvel régebbi az első?`, unit:'évvel'}),
-  ]},
-
-  // 10. Egyenes arányosság
-  {unit:'Ft',
-   gen(){
-    const up=randInt(1,15)*20,n1=randInt(2,5);
-    let n2=randInt(2,10);while(n2===n1)n2=randInt(2,10);
-    return{up,n1,n2,known:up*n1,ans:up*n2,name:wn()};
-   },
-   ph:[
-    d=>`Ha ${d.n1} kg alma ${d.known} Ft-ba kerül, mennyibe kerül ${d.n2} kg?`,
-    d=>`${d.n1} darab tojás ára ${d.known} Ft. Mennyi ${d.n2} darab tojás?`,
-    d=>`Egy boltban ${d.n1} liter tej ${d.known} Ft. Mennyibe kerül ${d.n2} liter tej?`,
-    d=>`Ha ${d.n1} kg liszt ${d.known} Ft, mennyibe kerül ${d.n2} kg liszt?`,
-    d=>`Egy piacon ${d.n1} kg körte ${d.known} Ft-ba kerül. Mennyi ${d.n2} kg körte?`,
-    d=>`${d.n1} füzet ${d.known} Ft. Mennyibe kerül ${d.n2} füzet?`,
-    d=>`Ha ${d.n1} m szövet ${d.known} Ft, mennyibe kerül ${d.n2} m szövet?`,
-    d=>`${d.n1} kg cukor ${d.known} Ft-ba kerül. Mennyi ${d.n2} kg cukor?`,
-    d=>`Egy boltban ${d.n1} kg narancs ${d.known} Ft. Mennyi ${d.n2} kg narancs?`,
-    d=>`Ha ${d.n1} üveg lekvárt ${d.known} Ft-ért lehet venni, mennyi ${d.n2} üveg?`,
-  ]},
+   ]},
 ];
 
 function makeWordEx(){
@@ -991,6 +912,9 @@ const GROUPS=[
   {id:'valszam', name:'📊 Valószínűség és statisztika',
    sub:'Klasszikus valószínűség, átlag, medián, kvartilis, középértékek',
    cats:['Valószínűség','Statisztika','Kvartilis','Középértékek']},
+  {id:'szoban', name:'📝 Szöveges feladatok',
+   sub:'Másodfokú egyenletek, hasonlóság, négyzetgyök, hatványozás, normálalak, valószínűség',
+   cats:['Szöveges']},
 ];
 const GEO_CATS=new Set(['HáromszögTerület','NégyszögTerület','KörTerület','Kerület','Pitagorasz','Körcikk','Trigonometria']);
 const WORD_CAT='Szöveges';

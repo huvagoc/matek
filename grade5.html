@@ -882,15 +882,15 @@ const GROUPS=[
    sub:'Hosszúság, terület, térfogat, tömeg, idő',
    cats:['Hosszúság','Terület','Térfogat','Tömeg','Idő']},
   {id:'stat', name:'📊 Statisztika és valószínűség',
-   sub:'Átlag, adatok értelmezése',
-   cats:['Statisztika']},
+   sub:'Átlag, adatok értelmezése, esély törtben',
+   cats:['Statisztika','Valószínűség']},
 ];
 const GEO_CATS=new Set(['Kerület','Síkterület','Felület3D','Térfogat3D']);
 const WORD_CAT='Szöveges';
 // Cats handled by their own generators (not conv/geo/word)
 const ARITH_CATS=new Set(['Helyiérték','Kerekítés','Oszthatóság','NegativSzam',
                           'Alapmuveletek','Egyenlet','Aranyossag',
-                          'Tortek','TizedesTort','Statisztika']);
+                          'Tortek','TizedesTort','Statisztika','Valószínűség']);
 
 let activeGroups = new Set(GROUPS.map(g => g.id));
 let showViz=false;
@@ -1309,6 +1309,26 @@ const STATTPL=[
   },
 ];
 
+// ── Valószínűség ──────────────────────────────────────
+const VALOSZINUTPL=[
+  ()=>{
+    // szabályos dobókocka – egy adott szám dobásának esélye
+    const n=randInt(1,6);
+    return fracEx(`Egy szabályos dobókockával dobunk. Mekkora az esélye (törtben), hogy ${n}-ot dobunk?`, 1, 6);
+  },
+  ()=>{
+    // dobókocka – páros/páratlan szám
+    const even=_rng()<0.5;
+    return fracEx(`Egy szabályos dobókockával dobunk. Mekkora az esélye (törtben), hogy ${even?'páros':'páratlan'} számot dobunk?`, 3, 6);
+  },
+  ()=>{
+    // zsákban golyók – két szín, kis darabszámmal
+    const red=randInt(1,4), blue=randInt(1,4);
+    const total=red+blue;
+    return fracEx(`Egy zsákban ${red} piros és ${blue} kék golyó van. Mekkora az esélye (törtben), hogy pirosat húzunk?`, red, total);
+  },
+];
+
 // ── Dispatch ──────────────────────────────────────────
 const ARITH_GENS={
   Helyiérték:  HELYIERTEKTPL,
@@ -1321,6 +1341,7 @@ const ARITH_GENS={
   Tortek:      TORTTPL,
   TizedesTort: TIZEDESTPL,
   Statisztika: STATTPL,
+  Valószínűség:VALOSZINUTPL,
 };
 
 function makeArith(cat){
