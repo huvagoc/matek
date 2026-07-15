@@ -1084,17 +1084,6 @@ const NEGYZETGYOKTPL=[
   },
 ];
 
-// Hungarian dative suffix (-nak back / -nek front) for numbers 1-100, chosen
-// by the vowel harmony of the number word's last component (units digit for
-// compounds, the tens word itself for round tens, "száz" for 100).
-function numDatSuffix(n){
-  const UNIT_BACK=new Set([3,6,8]);       // három, hat, nyolc
-  const TENS_BACK=new Set([20,30,60,80]); // húsz, harminc, hatvan, nyolcvan
-  if(n===100)return'nak';
-  const units=n%10;
-  if(units!==0)return UNIT_BACK.has(units)?'nak':'nek';
-  return TENS_BACK.has(n)?'nak':'nek';
-}
 
 
 // ── Százalék ─────────────────────────────────────────
@@ -1514,9 +1503,6 @@ function randNumer(d){
 
 
 
-// ── Oszthatósági szabályok ────────────────────────────
-// Instrumental suffixes for divisors (2-vel, 3-mal, 5-tel, 9-cel, 10-zel)
-const DIV_SUF={2:'2-vel',3:'3-mal',5:'5-tel',9:'9-cel',10:'10-zel'};
 
 
 
@@ -1550,7 +1536,7 @@ const ARITH_GENS={
 };
 
 // Categories whose answers can be negative (mobile decimal keypad has no minus)
-const TEXT_KEYBOARD_CATS=new Set(['Hatványozás',
+const TEXT_KEYBOARD_CATS=new Set(['Hatványozás','MásodfokúEgyenlet',
   'SzámtaniSorozat','MásodfokúFüggvény','LineárisFüggvény']);
 
 function makeArith(cat){

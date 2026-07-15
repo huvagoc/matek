@@ -906,15 +906,18 @@ const GROUPS=[
   {id:'fuggveny', name:'📈 Függvények',
    sub:'Másodfokú és lineáris függvények ábrázolása, jellemzése',
    cats:['MásodfokúFüggvény','LineárisFüggvény']},
-  {id:'geo', name:'📐 Hasonlóság, trigonometria és térgeometria',
-   sub:'Középpontos hasonlóság, hegyesszögek szögfüggvényei, magasság- és befogótétel, gúla, kúp, gömb',
-   cats:['Hasonlóság','Trigonometria','MagasságBefogó','Pitagorasz','KörTerület','Kerület','Körcikk','Gúla','Kúp','Gömb']},
+  {id:'geo', name:'📐 Hasonlóság és trigonometria',
+   sub:'Középpontos hasonlóság, hegyesszögek szögfüggvényei, magasság- és befogótétel',
+   cats:['Hasonlóság','Trigonometria','MagasságBefogó','Pitagorasz','KörTerület','Kerület','Körcikk']},
   {id:'valszam', name:'📊 Valószínűség és statisztika',
    sub:'Klasszikus valószínűség, átlag, medián, kvartilis, középértékek',
    cats:['Valószínűség','Statisztika','Kvartilis','Középértékek']},
   {id:'szoban', name:'📝 Szöveges feladatok',
    sub:'Másodfokú egyenletek, hasonlóság, négyzetgyök, hatványozás, normálalak, valószínűség',
    cats:['Szöveges']},
+  {id:'teritest', name:'📦 Testek (gúla, kúp, gömb)',
+   sub:'Gúla, kúp és gömb felszíne és térfogata',
+   cats:['Gúla','Kúp','Gömb']},
 ];
 const GEO_CATS=new Set(['HáromszögTerület','NégyszögTerület','KörTerület','Kerület','Pitagorasz','Körcikk','Trigonometria','Gúla','Kúp','Gömb']);
 const WORD_CAT='Szöveges';
@@ -1067,26 +1070,6 @@ const NEGYZETGYOKTPL=[
   },
 ];
 
-// Hungarian dative suffix (-nak back / -nek front) for numbers 1-100, chosen
-// by the vowel harmony of the number word's last component (units digit for
-// compounds, the tens word itself for round tens, "száz" for 100).
-function numDatSuffix(n){
-  const UNIT_BACK=new Set([3,6,8]);       // három, hat, nyolc
-  const TENS_BACK=new Set([20,30,60,80]); // húsz, harminc, hatvan, nyolcvan
-  if(n===100)return'nak';
-  const units=n%10;
-  if(units!==0)return UNIT_BACK.has(units)?'nak':'nek';
-  return TENS_BACK.has(n)?'nak':'nek';
-}
-
-
-// ── Százalék ─────────────────────────────────────────
-// Hungarian dative suffix: 1000-nek / 2000-nek (ezernek, kétezernek), otherwise -nak
-function nakNek(n){return(n===1000||n===2000)?`${n}-nek`:`${n}-nak`;}
-
-// "a" before a consonant-initial number word, "az" before a vowel-initial one
-// (egy, öt, and the ötven- tens all start with a vowel sound).
-function azA(n){return(n===1||n===5||(n>=50&&n<=59))?'az':'a';}
 
 // ── Statisztika ───────────────────────────────────────
 const STATTPL=[
@@ -1487,9 +1470,6 @@ function randNumer(d){
 
 
 
-// ── Oszthatósági szabályok ────────────────────────────
-// Instrumental suffixes for divisors (2-vel, 3-mal, 5-tel, 9-cel, 10-zel)
-const DIV_SUF={2:'2-vel',3:'3-mal',5:'5-tel',9:'9-cel',10:'10-zel'};
 
 
 
@@ -1552,7 +1532,7 @@ const ARITH_GENS={
 };
 
 // Categories whose answers can be negative (mobile decimal keypad has no minus)
-const TEXT_KEYBOARD_CATS=new Set(['Egyenlőtlenség','Hatványozás',
+const TEXT_KEYBOARD_CATS=new Set(['Hatványozás',
   'MásodfokúFüggvény','LineárisFüggvény']);
 
 function makeArith(cat){

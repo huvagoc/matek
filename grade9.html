@@ -204,11 +204,11 @@ body.kb .screen{gap:.5rem}
 
     <!-- Answer key lookup -->
     <div style="display:flex;gap:8px;align-items:center">
-      <input id="code-input" type="text" placeholder="Kód (pl. A3F7B-3F)"
+      <input id="code-input" type="text" placeholder="Kód (pl. A3F7B-1A0)"
              style="flex:1;height:44px;padding:0 12px;font-size:15px;font-family:var(--f);
                     background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
                     color:var(--text);outline:none;transition:border-color .15s;letter-spacing:.05em"
-             maxlength="8"
+             maxlength="9"
              oninput="this.value=this.value.toUpperCase()"
              onkeydown="if(event.key==='Enter')solveFromCode()"/>
       <button class="btn" style="width:auto;padding:0 18px;height:44px;flex-shrink:0"
@@ -349,17 +349,18 @@ function randChoice(a){return a[0|_rng()*a.length]}
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|_rng()*(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
 
 // ── seed encode/decode ────────────────────────────────
-// Code format: "A3F7B-3F"  (5 hex seed digits = 20-bit seed + hyphen + 2 hex group-bitmask digits)
+// Code format: "A3F7B-03F"  (5 hex seed digits = 20-bit seed + hyphen + 3 hex group-bitmask digits)
 // GROUPS order is fixed; bit 0 = GROUPS[0], bit 5 = GROUPS[5]
+// Older 2-digit codes (before teritest was added at index 8) are still accepted by the decoder.
 function encodeWorksheetCode(seed16,activeGroupsSet){
   let mask=0;
   GROUPS.forEach((g,i)=>{if(activeGroupsSet.has(g.id))mask|=(1<<i);});
   const s=seed16.toString(16).toUpperCase().padStart(5,'0');
-  const m=mask.toString(16).toUpperCase().padStart(2,'0');
+  const m=mask.toString(16).toUpperCase().padStart(3,'0');
   return`${s}-${m}`;
 }
 function decodeWorksheetCode(code){
-  const m=code.trim().toUpperCase().match(/^([0-9A-F]{5})-([0-9A-F]{2})$/);
+  const m=code.trim().toUpperCase().match(/^([0-9A-F]{5})-([0-9A-F]{2,3})$/);
   if(!m)return null;
   const seed=parseInt(m[1],16);
   const mask=parseInt(m[2],16);
@@ -913,15 +914,18 @@ const GROUPS=[
   {id:'fuggveny', name:'📈 Függvények',
    sub:'Elsőfokú és másodfokú függvények ábrázolása, jellemzése',
    cats:['LineárisFüggvény','MásodfokúFüggvény']},
-  {id:'geo', name:'📐 Geometria (sík- és térgeometria)',
-   sub:'Háromszögek, négyszögek, kör, körcikk, Pitagorasz, vektorok, gúla, kúp, gömb',
-   cats:['Pitagorasz','HáromszögTerület','NégyszögTerület','KörTerület','Kerület','Körcikk','Vektorok','Gúla','Kúp','Gömb']},
+  {id:'geo', name:'📐 Geometria (síkgeometria)',
+   sub:'Háromszögek, négyszögek, kör, körcikk, Pitagorasz, vektorok',
+   cats:['Pitagorasz','HáromszögTerület','NégyszögTerület','KörTerület','Kerület','Körcikk','Vektorok']},
   {id:'stat', name:'📉 Statisztika',
    sub:'Átlag, medián, módusz, terjedelem, kvartilis',
    cats:['Statisztika','Kvartilis']},
   {id:'szoban', name:'📝 Szöveges feladatok',
    sub:'Arányosság, százalék, méretarány, halmazok, kombinatorika és egyenletek szövegben',
    cats:['Szöveges']},
+  {id:'teritest', name:'📦 Testek (gúla, kúp, gömb)',
+   sub:'Gúla, kúp és gömb felszíne és térfogata',
+   cats:['Gúla','Kúp','Gömb']},
 ];
 const GEO_CATS=new Set(['HáromszögTerület','NégyszögTerület','KörTerület','Kerület','Pitagorasz','Körcikk','Gúla','Kúp','Gömb']);
 const WORD_CAT='Szöveges';
@@ -1513,9 +1517,6 @@ function randNumer(d){
 
 
 
-// ── Oszthatósági szabályok ────────────────────────────
-// Instrumental suffixes for divisors (2-vel, 3-mal, 5-tel, 9-cel, 10-zel)
-const DIV_SUF={2:'2-vel',3:'3-mal',5:'5-tel',9:'9-cel',10:'10-zel'};
 
 
 // ── Méretarány ────────────────────────────────────────
@@ -1885,7 +1886,7 @@ function solveFromCode(){
   const decoded=decodeWorksheetCode(inp.value);
   if(!decoded){
     box.style.display='block';
-    box.innerHTML='<span style="color:var(--err)">Érvénytelen kód. Formátum: A3F7B-3F</span>';
+    box.innerHTML='<span style="color:var(--err)">Érvénytelen kód. Formátum: A3F7B-1A0</span>';
     return;
   }
   // Temporarily override active groups and seed

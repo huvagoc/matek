@@ -52,7 +52,7 @@ Every grade/track quiz uses a single-file structure containing:
 
 ### Seeded PRNG and Worksheet Codes
 - **PRNG**: Simple `xorshift32` with a `_seed` state variable. All random parameters utilize it.
-- **Code Format**: `XXXXX-YY` where `XXXXX` is 5 hex digits (20-bit seed) and `YY` is 2 hex digits representing the active category bitmask (bit `i` corresponds to the category `GROUPS[i]`). This format and its meaning must stay stable across every file.
+- **Code Format**: `XXXXX-YY` where `XXXXX` is 5 hex digits (20-bit seed) and `YY` is 2 hex digits representing the active category bitmask (bit `i` corresponds to `GROUPS[i]`). All files use this format **except grade9.html**, which has 9 category groups and therefore uses a 3-digit mask (`XXXXX-YYY`); its `decodeWorksheetCode` regex accepts both 2- and 3-digit suffixes for backward compatibility with codes printed before the 9th group was added. Each file's codec only needs to handle its own format — no cross-file compatibility is required (pages are standalone).
 - **Solution Verification**: Entering a worksheet code on the settings screen and clicking "Megoldások" (Solutions) allows instant access to answer keys without having to redo the quiz.
 
 ### Answer Normalization & Validation
