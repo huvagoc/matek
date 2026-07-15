@@ -7,7 +7,7 @@
  * then redeploy. Otherwise returning visitors keep serving the old cached
  * version. Changing this file is what triggers the update.
  */
-const CACHE = 'matek-v14';
+const CACHE = 'matek-v16';
 
 const FILES = [
   './',

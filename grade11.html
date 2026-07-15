@@ -944,9 +944,12 @@ const GROUPS=[
   {id:'szoban', name:'📝 Szöveges feladatok',
    sub:'Trigonometria, exponenciális folyamatok, koordinátageometria, kombinatorika és valószínűség szövegesen',
    cats:['Szöveges']},
+  {id:'tergeo', name:'🔺 Térgeometria (testek)',
+   sub:'Gúla, kúp, gömb felszíne és térfogata',
+   cats:['Gúla','Kúp','Gömb']},
 ];
 const GEO_CATS=new Set(['HáromszögTerület','NégyszögTerület','KörTerület','Kerület','Pitagorasz',
-                        'Trigonometria','SzinuszKoszinusz','Koordinátageometria','KörEgyenlet']);
+                        'Trigonometria','SzinuszKoszinusz','Koordinátageometria','KörEgyenlet','Gúla','Kúp','Gömb']);
 const WORD_CAT='Szöveges';
 const ARITH_CATS=new Set(['Hatványozás','Négyzetgyök','NormálAlak','Logaritmus','LogEgyenlet','Exponenciális',
                           'TrigonometriaValós','Vektorok','EgyenesNormál',
@@ -1044,22 +1047,6 @@ function checkTextAnswer(raw, ex){
   return(ex.accept||[]).some(a=>u===normText(a));
 }
 
-// ── LNKO / LKKT ──────────────────────────────────────
-const LNKOTPL=[
-  ()=>{
-    const NUMS=[12,18,24,30,36,42,48];
-    const a=randChoice(NUMS);let b=randChoice(NUMS);
-    while(b===a)b=randChoice(NUMS);
-    return arith(`Mennyi ${a} és ${b} legnagyobb közös osztója (LNKO)?`, gcd(a,b), '');
-  },
-];
-const LKKTTPL=[
-  ()=>{
-    const a=randInt(3,12);let b=randInt(3,12);
-    while(b===a)b=randInt(3,12);
-    return arith(`Mennyi ${a} és ${b} legkisebb közös többszöröse (LKKT)?`, lcm(a,b), '');
-  },
-];
 
 // ── Hatványozás ──────────────────────────────────────
 // Superscript notation ("2³ = ?") — the "-on" suffix form was grammatically
@@ -1125,17 +1112,6 @@ function numDatSuffix(n){
   return TENS_BACK.has(n)?'nak':'nek';
 }
 
-// ── Oszthatóság ──────────────────────────────────────
-const OSZTHPL=[
-  ()=>{const n=randInt(2,100); return arith(`Hány osztója van a ${n}-${numDatSuffix(n)}?`, Array.from({length:n},(_,i)=>i+1).filter(d=>n%d===0).length, 'db');},
-  ()=>{
-    const n=randChoice([12,18,20,24,30,42,60]);
-    // prime factorization string — text answer, "·", "x" and "*" all accepted
-    const factors=[]; let d=2, temp=n;
-    while(temp>1){while(temp%d===0){factors.push(d);temp/=d;}d++;}
-    return textArith(`Bontsd prímtényezőkre a ${n} számot!\n(pl. 2·2·3 vagy 2*2*3 formában, növekvő sorrendben)`, factors.join('·'), '', [factors.join('*')]);
-  },
-];
 
 // ── Százalék ─────────────────────────────────────────
 // Hungarian dative suffix: 1000-nek / 2000-nek (ezernek, kétezernek), otherwise -nak
@@ -1157,52 +1133,6 @@ const SZAZALEKRATETPL=[
     do{base=randChoice([100,200,500,1000]);val=randChoice([10,20,50,100,250]);}
     while(val>=base);
     return arith(`${val} a(z) ${nakNek(base)} hány %-a?`, (val/base)*100, '%');
-  },
-];
-
-// ── Kamat (egyszerű és kamatos kamat) ────────────────
-// rate → denom1 (1 évi (1+r) törtalakjának nevezője), denom2 (2 évi (1+r)² nevezője)
-const KAMAT_RATES=[
-  {rate:10, denom1:10, denom2:100},
-  {rate:20, denom1:5,  denom2:25},
-  {rate:25, denom1:4,  denom2:16},
-  {rate:50, denom1:2,  denom2:4},
-];
-const KAMATTPL=[
-  // Egyszerű kamat egy évre — csak a kamat összegét kérdezzük
-  ()=>{
-    const r=randChoice(KAMAT_RATES);
-    const principal=randInt(2,30)*r.denom1;
-    const kamat=principal*r.rate/100;
-    return arith(`Egy ${principal} Ft-os betétre egy év alatt ${r.rate}% kamatot fizetnek.\nMennyi Ft kamatot kapunk?`, kamat, 'Ft');
-  },
-  // Egyszerű kamat — a betét + kamat összege egy év múlva
-  ()=>{
-    const r=randChoice(KAMAT_RATES);
-    const principal=randInt(2,30)*r.denom1;
-    const total=principal*(100+r.rate)/100;
-    return arith(`Egy ${principal} Ft-os betétre egy év alatt ${r.rate}% kamatot fizetnek.\nMennyi lesz a betét összesen egy év múlva?`, total, 'Ft');
-  },
-  // Kamatos kamat — két év, az összeg mindkét évben ugyanazon a kamatlábon nő
-  ()=>{
-    const r=randChoice(KAMAT_RATES);
-    const principal=randInt(2,20)*r.denom2;
-    const total=principal*Math.pow((100+r.rate)/100,2);
-    return arith(`Egy ${principal} Ft-os betét évi ${r.rate}%-os kamatos kamattal növekszik.\nMennyi lesz az összeg 2 év múlva?`, Math.round(total), 'Ft');
-  },
-];
-
-// ── Algebra ──────────────────────────────────────────
-const ALGEBRAVALTPL=[
-  ()=>{
-    const x=randInt(2,6);
-    const a=randInt(2,5), b=randInt(1,10);
-    return arith(`Mennyi a ${a}x + ${b} értéke, ha x = ${x}?`, a*x+b, '');
-  },
-  ()=>{
-    // a,b ≥ 3 → a·b − 5 sosem negatív (a tizedes mobilbillentyűzeten nincs mínusz)
-    const a=randInt(3,10), b=randInt(3,10);
-    return arith(`Mennyi az a · b − 5 értéke, ha a = ${a} és b = ${b}?`, a*b-5, '');
   },
 ];
 
@@ -1285,34 +1215,6 @@ const KOMBINATORIKATPL=[
 
 function nCr(n,k){let r=1;for(let i=1;i<=k;i++){r=r*(n-i+1)/i;}return Math.round(r);}
 
-// ── Halmazok — logikai szita (szitaformula) ───────────
-const HALMAZTPL=[
-  // |A∪B| = |A| + |B| − |A∩B|
-  ()=>{
-    const both=randInt(2,10), onlyA=randInt(3,15), onlyB=randInt(3,15);
-    const A=onlyA+both, B=onlyB+both, U=onlyA+onlyB+both;
-    return arith(`Egy osztályban ${A} tanuló focizik, ${B} kosarazik, és ${both} tanuló mindkettőt űzi.\nHányan sportolnak a felsoroltak közül (legalább az egyiket)?`, U, 'tanuló');
-  },
-  // metszet visszafejtése: |A∩B| = |A| + |B| − |A∪B|
-  ()=>{
-    const both=randInt(2,10), onlyA=randInt(3,15), onlyB=randInt(3,15);
-    const A=onlyA+both, B=onlyB+both, U=onlyA+onlyB+both;
-    return arith(`Egy csoportban ${A}-en tanulnak angolul, ${B}-en németül, és összesen ${U}-en tanulnak legalább egy nyelvet.\nHányan tanulják mindkét nyelvet?`, both, 'tanuló');
-  },
-  // csak az egyik halmazba tartozók
-  ()=>{
-    const both=randInt(2,8), onlyA=randInt(4,15), onlyB=randInt(4,15);
-    const A=onlyA+both, B=onlyB+both;
-    return arith(`Egy rendezvényen ${A} vendég kávét, ${B} vendég teát kért, ${both} vendég pedig mindkettőt.\nHány vendég kért csak kávét?`, onlyA, 'vendég');
-  },
-  // három halmazos szita: 1..N közül hány nem osztható 2-vel, 3-mal, 5-tel sem (2026 emelt/3a típusa)
-  ()=>{
-    const N=randChoice([60,90,120,150,210,300]);
-    const cnt=N-(Math.floor(N/2)+Math.floor(N/3)+Math.floor(N/5))
-              +(Math.floor(N/6)+Math.floor(N/10)+Math.floor(N/15))-Math.floor(N/30);
-    return arith(`Hány olyan pozitív egész szám van 1 és ${N} között, amelyik sem 2-vel, sem 3-mal, sem 5-tel nem osztható?`, cnt, '');
-  },
-];
 
 // ── Kombináció C(n,k) — sorrend nélküli kiválasztás ───
 const KOMBINACIOTPL=[
@@ -1356,109 +1258,10 @@ const GRAFTPL=[
 
 // ── Számrendszerek — átváltás (n ≤ 9) ─────────────────
 function toBase(num,base){let s='';if(num===0)return'0';while(num>0){s=(num%base)+s;num=Math.floor(num/base);}return s;}
-const SZAMRENDSZERTPL=[
-  // 10-es alapról n alapú számrendszerbe (n ≤ 9) — szöveges (jegysorozat)
-  ()=>{
-    const base=randInt(2,9);
-    const num=randInt(base*base, base*base*base); // legalább 3 jegyű az új alapban
-    return textArith(`Írd át a(z) ${num} tízes számrendszerbeli számot ${base}-es alapú számrendszerbe!\n(csak a számjegyeket írd, pl. 1011)`, toBase(num,base), `(${base}-es alapú)`);
-  },
-  // n alapú számrendszerből 10-es alapba
-  ()=>{
-    const base=randInt(2,9);
-    const num=randInt(base*base, base*base*base);
-    const rep=toBase(num,base);
-    return arith(`A(z) ${rep} szám ${base}-es alapú számrendszerben van felírva.\nMennyi ez tízes számrendszerben?`, num, '');
-  },
-];
 
-// ── Számtani sorozat (arithmetic sequence) ────────────
-const SZAMTANITPL=[
-  // n-edik tag: a_n = a_1 + (n−1)d
-  ()=>{
-    const a1=randInt(-5,15), d=randInt(2,9), n=randInt(6,20);
-    const an=a1+(n-1)*d;
-    return arith(`Egy számtani sorozat első tagja a₁ = ${a1}, különbsége d = ${d}.\nMennyi a ${n}. tag (a${sub(n)})?`, an, '');
-  },
-  // különbség két tagból
-  ()=>{
-    const a1=randInt(1,10), d=randInt(2,8), n=randInt(5,12);
-    const an=a1+(n-1)*d;
-    return arith(`Egy számtani sorozat első tagja ${a1}, a ${n}. tagja ${an}.\nMennyi a d különbség?`, d, '');
-  },
-  // első n tag összege: S_n = n(a_1+a_n)/2
-  ()=>{
-    const a1=randInt(1,10), d=randInt(2,7), n=randInt(5,15);
-    const an=a1+(n-1)*d;
-    const S=n*(a1+an)/2;
-    return arith(`Egy számtani sorozat első tagja ${a1}, különbsége ${d}.\nMennyi az első ${n} tag összege (S${sub(n)})?`, S, '');
-  },
-];
 
-// ── Mértani sorozat (geometric sequence) ──────────────
-const MERTANITPL=[
-  // n-edik tag: a_n = a_1 · q^(n−1)
-  ()=>{
-    const a1=randChoice([1,2,3,5]), q=randChoice([2,3]), n=randInt(4,7);
-    const an=a1*Math.pow(q,n-1);
-    return arith(`Egy mértani sorozat első tagja a₁ = ${a1}, hányadosa q = ${q}.\nMennyi a ${n}. tag (a${sub(n)})?`, an, '');
-  },
-  // hányados két tagból
-  ()=>{
-    const a1=randChoice([2,3,4,5]), q=randChoice([2,3]), n=randInt(3,5);
-    const an=a1*Math.pow(q,n-1);
-    return arith(`Egy mértani sorozat első tagja ${a1}, a ${n}. tagja ${an}.\nMennyi a q hányados?`, q, '');
-  },
-  // első n tag összege: S_n = a_1·(q^n − 1)/(q − 1)
-  ()=>{
-    const a1=randChoice([1,2,3]), q=randChoice([2,3]), n=randInt(3,6);
-    const S=a1*(Math.pow(q,n)-1)/(q-1);
-    return arith(`Egy mértani sorozat első tagja ${a1}, hányadosa ${q}.\nMennyi az első ${n} tag összege (S${sub(n)})?`, S, '');
-  },
-];
 
-// ── Kamatos kamat (compound interest) ─────────────────
-const KAMATOSTPL=[
-  // záró tőke: záró = tőke · (1 + p/100)^n — egész eredményt adó paraméterekkel
-  ()=>{
-    const rates=[{p:10,d:10},{p:20,d:5},{p:25,d:4},{p:50,d:2}];
-    const r=randChoice(rates), n=randInt(2,3);
-    const principal=randInt(2,10)*Math.pow(r.d,n);
-    const final=principal*Math.pow((100+r.p)/100,n);
-    return arith(`${principal} Ft-ot elhelyezünk évi ${r.p}%-os kamatos kamattal.\nMennyi lesz a tőke ${n} év múlva?`, Math.round(final), 'Ft');
-  },
-  // a kamat (nyereség) összege n év alatt
-  ()=>{
-    const rates=[{p:10,d:10},{p:20,d:5},{p:25,d:4}];
-    const r=randChoice(rates), n=2;
-    const principal=randInt(2,10)*Math.pow(r.d,n);
-    const final=principal*Math.pow((100+r.p)/100,n);
-    return arith(`${principal} Ft-ot lekötünk évi ${r.p}%-os kamatos kamattal ${n} évre.\nMennyi kamatot (nyereséget) kapunk összesen?`, Math.round(final-principal), 'Ft');
-  },
-];
 
-// ── Másodfokú egyenlet (quadratic) ────────────────────
-const MASODFOKUTPL=[
-  // gyökök szorzata/egészgyökök — (x−r1)(x−r2)=0 → x²−(r1+r2)x+r1r2=0
-  ()=>{
-    const r1=randInt(1,9); let r2; do{r2=randInt(1,9);}while(r2===r1); // distinct roots — "melyik a nagyobbik" is ill-posed for a double root
-    const b=-(r1+r2), c=r1*r2;
-    const bigger=Math.max(r1,r2);
-    return arith(`Oldd meg: x² ${b<0?'−':'+'} ${Math.abs(b)}x + ${c} = 0\nMi a nagyobbik gyök?`, bigger, '');
-  },
-  // diszkrimináns
-  ()=>{
-    const a=1, b=randInt(-9,9), c=randInt(-9,9);
-    const D=b*b-4*a*c;
-    return arith(`Mennyi az x² ${b<0?'−':'+'} ${Math.abs(b)}x ${c<0?'−':'+'} ${Math.abs(c)} = 0 egyenlet diszkriminánsa (D = b² − 4ac)?`, D, '');
-  },
-  // gyökök összege Viète: −b/a
-  ()=>{
-    const r1=randInt(1,9), r2=randInt(1,9);
-    const b=-(r1+r2), c=r1*r2;
-    return arith(`Az x² ${b<0?'−':'+'} ${Math.abs(b)}x + ${c} = 0 egyenlet két gyökének összege?`, r1+r2, '');
-  },
-];
 
 // ── Exponenciális egyenlet / folyamat ─────────────────
 const EXPONENCIALISTPL=[
@@ -1491,36 +1294,7 @@ const EXPONENCIALISTPL=[
   },
 ];
 
-// ── Másodfokú függvény (quadratic function) ───────────
-const MASODFOKUFVTPL=[
-  // teljes négyzet: y = (x−u)² + v alakból csúcspont
-  ()=>{
-    const u=randInt(-5,5), v=randInt(-8,8);
-    const askX=randChoice([true,false]);
-    return arith(`Az f(x) = (x ${u<0?'+':'−'} ${Math.abs(u)})² ${v<0?'−':'+'} ${Math.abs(v)} másodfokú függvény csúcspontja.\nMi a csúcspont ${askX?'x':'y'} koordinátája?`, askX?u:v, '');
-  },
-  // zérushely: (x−r1)(x−r2) → gyökök
-  ()=>{
-    let r1=randInt(-6,6), r2; do{r2=randInt(-6,6);}while(r2===r1); if(r2<r1){[r1,r2]=[r2,r1];} // r1 must be 'let': the swap below reassigns it; also excludes a double root
-    const b=-(r1+r2), c=r1*r2;
-    return arith(`Az f(x) = x² ${b<0?'−':'+'} ${Math.abs(b)}x ${c<0?'−':'+'} ${Math.abs(c)} függvény két zérushelye közül a nagyobbik?`, r2, '');
-  },
-];
 
-// ── Lineáris függvény (linear function) ───────────────
-const LINEARISTPL=[
-  // meredekség két pontból: m = (y2−y1)/(x2−x1)
-  ()=>{
-    const x1=randInt(-5,5); let x2=randInt(-5,5); if(x2===x1)x2=x1+1;
-    const m=randInt(-4,4), y1=randInt(-6,6), y2=y1+m*(x2-x1);
-    return textArith(`Egy egyenes átmegy a P(${x1}; ${y1}) és Q(${x2}; ${y2}) pontokon.\nMennyi az egyenes meredeksége (m)?`, String(m), '');
-  },
-  // f(x) = mx + b behelyettesítés
-  ()=>{
-    const m=randInt(-4,5), b=randInt(-6,6), x=randInt(-4,6);
-    return textArith(`Az f(x) = ${m}x ${b<0?'−':'+'} ${Math.abs(b)} lineáris függvény esetén mennyi f(${x})?`, String(m*x+b), '');
-  },
-];
 
 // ── Kvartilis / statisztika-bővítés ───────────────────
 const KVARTILISTPL=[
@@ -1577,74 +1351,10 @@ const VARHATOTPL=[
   },
 ];
 
-// ════════ ÉRETTSÉGI EMELT SZINT — extra témakörök ════════
 
-// ── Binomiális együttható és binomiális tétel ─────────
-const BINOMEGYUTTTPL=[
-  ()=>{
-    const n=randInt(4,8), k=randInt(2,n-2);
-    return arith(`Mennyi a binomiális együttható értéke: C(${n}, ${k}) = (${n} alatt a ${k})?`, nCr(n,k), '');
-  },
-  // binomiális tétel: (a+b)^n k-adik tagjának együtthatója = C(n,k)
-  ()=>{
-    const n=randInt(4,7), k=randInt(1,n-1);
-    return arith(`Az (x + 1)^${n} kifejtésében mennyi az x^${k} tag együtthatója?`, nCr(n,k), '');
-  },
-  // Pascal-háromszög sor összege = 2^n
-  ()=>{
-    const n=randInt(3,7);
-    return arith(`Mennyi a binomiális együtthatók összege: C(${n},0) + C(${n},1) + … + C(${n},${n})?`, Math.pow(2,n), '');
-  },
-];
 
-// ── Permutáció ismétléssel (anagrammák) ───────────────
-const PERMISMTPL=[
-  // ismétléses permutáció: n! / (k1!·k2!·…)
-  ()=>{
-    const words=[
-      {w:'ALMA', ans:12},        // 4!/2! = 12
-      {w:'ANNA', ans:12},        // 4!/2! (két N)... A,N,N,A → 4!/(2!·2!)=6
-    ];
-    // pontos számítás betűgyakoriságból
-    const list=['ALMA','MAMA','ANNA','SASSS','LEPKE','MATEK','KERET','TETO'];
-    const w=randChoice(['ALMA','MAMA','ANNA','MATEK','KERET','ABBA','TETT']);
-    const freq={}; for(const ch of w) freq[ch]=(freq[ch]||0)+1;
-    let denom=1; for(const k in freq) denom*=fact(freq[k]);
-    const ans=fact(w.length)/denom;
-    return arith(`Hányféle sorrendben rakhatók ki a(z) „${w}” szó betűi?`, ans, 'féleképpen');
-  },
-  ()=>{
-    const a=randInt(2,4), b=randInt(2,4);
-    const ans=fact(a+b)/(fact(a)*fact(b));
-    return arith(`Hányféle sorrendben állítható sorba ${a} piros és ${b} kék (egyforma) golyó?`, ans, 'féleképpen');
-  },
-];
 
-// ── Részhalmazok száma: 2^n ───────────────────────────
-const RESZHALMAZTPL=[
-  ()=>{
-    const n=randInt(3,8);
-    return arith(`Hány részhalmaza van egy ${n} elemű halmaznak? (az üres halmazt és önmagát is beleértve)`, Math.pow(2,n), '');
-  },
-  ()=>{
-    const n=randInt(3,7);
-    return arith(`Egy ${n} elemű halmaznak hány valódi részhalmaza van? (önmagát nem beleértve)`, Math.pow(2,n)-1, '');
-  },
-];
 
-// ── Végtelen mértani sor összege: S = a₁/(1−q), |q|<1 ──
-const VEGTELENSORTPL=[
-  ()=>{
-    const qs=[{q:'1/2',d:2},{q:'1/3',d:3},{q:'1/4',d:4},{q:'2/3',n:2,d:3}];
-    const r=randChoice(qs);
-    const qn=r.n||1, qd=r.d;
-    // S = a1 / (1 - qn/qd) = a1·qd/(qd-qn)
-    const factor=qd/(qd-qn);
-    const a1=randInt(2,10)*(qd-qn); // hogy S egész legyen
-    const S=a1*factor;
-    return arith(`Egy végtelen mértani sor első tagja ${a1}, hányadosa ${r.q}.\nMennyi a sor összege? (S = a₁/(1−q))`, S, '');
-  },
-];
 
 // ── Logaritmus (érték, alapváltás) ────────────────────
 const LOGARITMUSTPL=[
@@ -1675,119 +1385,14 @@ const LOGEGYENLETTPL=[
   },
 ];
 
-// ── Osztók száma prímtényezős felbontásból ────────────
-const OSZTOKSZAMATPL=[
-  ()=>{
-    // n = 2^a · 3^b → osztók száma (a+1)(b+1)
-    const a=randInt(1,4), b=randInt(1,3);
-    const n=Math.pow(2,a)*Math.pow(3,b);
-    return arith(`Hány pozitív osztója van a ${n} számnak?`, (a+1)*(b+1), 'osztó');
-  },
-  ()=>{
-    const p=randChoice([2,3,5]), a=randInt(2,5);
-    const n=Math.pow(p,a);
-    return arith(`Hány pozitív osztója van a ${n} = ${p}${SUP[a]||'^'+a} számnak?`, a+1, 'osztó');
-  },
-];
 
-// ── Másodfokú egyenletrendszer (gyöktényezős) ─────────
-const MASODFOKURENDSZERTPL=[
-  // x+y=S, x·y=P → gyökök; a nagyobbat kérdezzük
-  ()=>{
-    const x=randInt(2,12); let y=randInt(2,12);
-    const S=x+y, P=x*y;
-    return arith(`Oldd meg:\nx + y = ${S}\nx · y = ${P}\nMi a nagyobbik ismeretlen értéke?`, Math.max(x,y), '');
-  },
-];
 
-// ── Deriválás (polinom deriváltja adott pontban) ──────
-const DERIVALASTPL=[
-  // f(x)=ax²+bx+c → f'(x)=2ax+b, kiértékelés x0-ban
-  ()=>{
-    const a=randInt(1,5), b=randInt(-6,6), x0=randInt(-3,4);
-    const der=2*a*x0+b;
-    return textArith(`Az f(x) = ${a}x² ${b<0?'−':'+'} ${Math.abs(b)}x + 3 függvény deriváltja f'(x) = ${2*a}x ${b<0?'−':'+'} ${Math.abs(b)}.\nMennyi f'(${x0})?`, String(der), '');
-  },
-  // deriváltfüggvény együtthatója: f(x)=ax^n → f'(x)=n·a·x^(n-1)
-  ()=>{
-    const a=randInt(2,6), n=randInt(2,4);
-    return textArith(`Mi az f(x) = ${a}x${SUP[n]||'^'+n} függvény deriváltjának főegyütthatója?`, String(a*n), '');
-  },
-];
 
-// ── Szélsőérték (másodfokú, derivált = 0) ─────────────
-const SZELSOERTEKTPL=[
-  // f(x)=ax²+bx+c, szélsőérték helye x = −b/(2a); b osztható 2a-val → egész
-  ()=>{
-    const a=randChoice([1,2,3]), h=randInt(-4,4); // h a szélsőérték helye
-    const b=-2*a*h; // így x* = −b/(2a) = h
-    return textArith(`Az f(x) = ${a}x² ${b<0?'−':'+'} ${Math.abs(b)}x + 5 függvénynek hol van a szélsőértéke?\nAdd meg a szélsőérték x helyét!`, String(h), '');
-  },
-];
 
 // ── Határozott integrál (polinom) ─────────────────────
 // Tiszta egész eredményt adó alakok: ∫3x²=x³, ∫2x=x², a törtek eltűnnek.
-const INTEGRALTPL=[
-  // ∫₀ᵇ 3x² dx = b³
-  ()=>{
-    const b=randInt(2,6);
-    return textArith(`Határozd meg a határozott integrált:\n∫₀${sup(b)} 3x² dx = ?`, String(Math.pow(b,3)), '');
-  },
-  // ∫ₐᵇ 2x dx = b² − a²
-  ()=>{
-    const a=randInt(1,4), b=randInt(a+1,7);
-    return textArith(`Határozd meg a határozott integrált:\n∫${sub(a)}${sup(b)} 2x dx = ?`, String(b*b-a*a), '');
-  },
-  // ∫ₐᵇ c dx = c(b−a)
-  ()=>{
-    const c=randInt(2,6), a=randInt(0,3), b=randInt(a+2,8);
-    return textArith(`Határozd meg a határozott integrált:\n∫${sub(a)}${sup(b)} ${c} dx = ?`, String(c*(b-a)), '');
-  },
-];
 
-// ── Középértékek (számtani, mértani közép) ────────────
-const KOZEPERTEKEKTPL=[
-  // számtani közép
-  ()=>{
-    const a=randInt(2,20), b=randInt(2,20);
-    if((a+b)%2!==0)return null;
-    return arith(`Mennyi ${a} és ${b} számtani közepe? ( (a+b)/2 )`, (a+b)/2, '');
-  },
-  // mértani közép — teljes négyzet szorzat
-  ()=>{
-    const pairs=[[2,8],[3,12],[4,9],[2,18],[5,20],[4,16],[3,27],[6,24],[8,18]];
-    const [a,b]=randChoice(pairs);
-    return arith(`Mennyi ${a} és ${b} mértani közepe? ( √(a·b) )`, Math.sqrt(a*b), '');
-  },
-  // harmonikus közép: 2ab/(a+b) — egész eredményt adó párokkal
-  ()=>{
-    const [a,b]=randChoice([[3,6],[4,12],[6,12],[2,6],[5,20],[10,15],[6,30],[3,15],[2,2]]);
-    return arith(`Mennyi ${a} és ${b} harmonikus közepe? ( 2ab/(a+b) )`, 2*a*b/(a+b), '');
-  },
-  // négyzetes közép (kvadratikus): √((a²+b²)/2) — egész eredményt adó párokkal
-  ()=>{
-    const [a,b]=randChoice([[1,7],[2,14],[7,17],[7,23],[14,34]]);
-    return arith(`Mennyi ${a} és ${b} négyzetes közepe? ( √((a²+b²)/2) )`, Math.sqrt((a*a+b*b)/2), '');
-  },
-];
 
-// ── Binomiális eloszlás ───────────────────────────────
-const BINOMELOSZLASTPL=[
-  // várható érték: E(X) = n·p
-  ()=>{
-    const n=randInt(4,20), pOpts=[{s:'1/2',v:0.5},{s:'1/4',v:0.25},{s:'1/5',v:0.2},{s:'1/10',v:0.1}];
-    const p=randChoice(pOpts);
-    const E=n*p.v;
-    if(!Number.isInteger(E))return null;
-    return arith(`Egy kísérletet ${n}-szer végzünk el, minden alkalommal ${p.s} valószínűséggel következik be az esemény.\nMennyi a bekövetkezések számának várható értéke? (E = n·p)`, E, '');
-  },
-  // P(X=k) = C(n,k)·(1/2)^n — tört alakban
-  ()=>{
-    const n=randInt(3,5), k=randInt(1,n-1);
-    const num=nCr(n,k), den=Math.pow(2,n);
-    return fracEx(`Egy szabályos érmét ${n}-szer feldobunk. Mennyi a valószínűsége, hogy pontosan ${k}-szor lesz fej?\n(add meg törtként)`, num, den);
-  },
-];
 
 // ── Vektorok (skaláris szorzat, hossz) ────────────────
 const VEKTOROKTPL=[
@@ -1853,96 +1458,9 @@ const TRIGVALOSTPL=[
   },
 ];
 
-// ── Negatív számok ────────────────────────────────────
-const NEGATIVTPL=[
-  ()=>{
-    const a=randInt(1,20),b=randInt(1,20);
-    return arith(`${a} + (−${b}) = ?`, a-b, '');
-  },
-  ()=>{
-    const a=randInt(1,20),b=randInt(1,20);
-    return arith(`−${a} + ${b} = ?`, b-a, '');
-  },
-  ()=>{
-    const a=randInt(1,20),b=randInt(1,20);
-    return arith(`−${a} − ${b} = ?`, -(a+b), '');
-  },
-  ()=>{
-    const a=randInt(1,15),b=randInt(1,15);
-    return arith(`${a} − ${b+a} = ?`, -b, '');
-  },
-  ()=>{
-    const a=randInt(-10,10);let b=randInt(-10,10);
-    while(b===a)b=randInt(-10,10);
-    return arith(`Melyik nagyobb: ${a} vagy ${b}?`, Math.max(a,b), '');
-  },
-  ()=>{
-    const t=randInt(-20,20);
-    return arith(`Mi ${t} ellentettje?`, -t, '');
-  },
-  // Negatív számok szorzása, osztása (7. osztályos újdonság)
-  ()=>{const a=randInt(2,12),b=randInt(2,12); return arith(`(−${a}) × ${b} = ?`, -(a*b), '');},
-  ()=>{const a=randInt(2,12),b=randInt(2,12); return arith(`(−${a}) × (−${b}) = ?`, a*b, '');},
-  ()=>{const b=randInt(2,12),ans=randInt(2,12); return arith(`(−${b*ans}) ÷ ${b} = ?`, -ans, '');},
-  ()=>{const b=randInt(2,12),ans=randInt(2,12); return arith(`(−${b*ans}) ÷ (−${b}) = ?`, ans, '');},
-];
 
-// ── Alapműveletek ─────────────────────────────────────
-const ALAPMUVTPL=[
-  ()=>{const a=randInt(100,9999),b=randInt(100,9999);return arith(`${a} + ${b} = ?`, a+b, '');},
-  ()=>{const a=randInt(1000,99999),b=randInt(100,9999);return arith(`${a} + ${b} = ?`, a+b, '');},
-  ()=>{const b=randInt(100,4999),a=randInt(b+1,9999);return arith(`${a} − ${b} = ?`, a-b, '');},
-  ()=>{const b=randInt(1000,49999),a=randInt(b+1,99999);return arith(`${a} − ${b} = ?`, a-b, '');},
-  ()=>{const a=randInt(2,99),b=randInt(2,99);return arith(`${a} × ${b} = ?`, a*b, '');},
-  ()=>{const a=randInt(2,12),b=randInt(2,12);return arith(`${a} × ${b} = ?`, a*b, '');},
-  ()=>{const b=randInt(2,12),ans=randInt(2,99);return arith(`${b*ans} ÷ ${b} = ?`, ans, '');},
-  ()=>{const b=randInt(2,9),ans=randInt(10,99);return arith(`${b*ans} ÷ ${b} = ?`, ans, '');},
-  ()=>{
-    const a=randInt(2,9),b=randInt(2,9),c=randInt(2,9);
-    return arith(`${a} + ${b} × ${c} = ?`, a+b*c, '');
-  },
-  ()=>{
-    const a=randInt(2,9),b=randInt(2,9),c=randInt(2,9);
-    return arith(`(${a} + ${b}) × ${c} = ?`, (a+b)*c, '');
-  },
-];
 
-// ── Egyenletek ────────────────────────────────────────
-const EGYENLTPL=[
-  ()=>{const x=randInt(1,50),b=randInt(1,30);return arith(`x + ${b} = ${x+b}  →  x = ?`, x, '');},
-  ()=>{const b=randInt(1,30),x=randInt(b+1,b+50);return arith(`x − ${b} = ${x-b}  →  x = ?`, x, '');},
-  ()=>{const x=randInt(2,20),a=randInt(2,9);return arith(`${a} × x = ${a*x}  →  x = ?`, x, '');},
-  ()=>{const x=randInt(2,12),a=randInt(2,9);return arith(`x ÷ ${a} = ${x}  →  x = ?`, x*a, '');},
-  ()=>{const x=randInt(1,30),a=randInt(2,5),b=randInt(1,20);return arith(`${a} × x + ${b} = ${a*x+b}  →  x = ?`, x, '');},
-  ()=>{const x=randInt(1,20),b=randInt(1,15);return arith(`x + x + ${b} = ${2*x+b}  →  x = ?`, x, '');},
-  // Zárójeles, kéttagú egyenlet — 7. osztályos szint
-  ()=>{const a=randInt(2,6),x=randInt(1,15),b=randInt(1,10);return arith(`${a} × (x + ${b}) = ${a*(x+b)}  →  x = ?`, x, '');},
-  // Ismeretlen mindkét oldalon (7. osztályos szint)
-  ()=>{
-    const x=randInt(1,20), a=randInt(3,8), c=randInt(1,a-1), d=randInt(1,25);
-    // a·x + d = c·x + (d + (a-c)*x)  →  egyszerűsítve: (a-c)x = jobb oldali konstans - d
-    const rightConst = d + (a-c)*x;
-    return arith(`${a} × x + ${d} = ${c} × x + ${rightConst}  →  x = ?`, x, '');
-  },
-];
 
-// ── Egyenletrendszer (8. osztály — két ismeretlenes) ──
-const EGYENLETRENDSZERTPL=[
-  // x+y=S, x-y=D → x=(S+D)/2, y=(S-D)/2 — S,D azonos paritású, hogy egész legyen
-  ()=>{
-    const x=randInt(2,30), y=randInt(1,x-1);
-    const S=x+y, D=x-y;
-    const askX=randChoice([true,false]);
-    return arith(`x + y = ${S}\nx − y = ${D}\nMennyi ${askX?'x':'y'}?`, askX?x:y, '');
-  },
-  // 2x+y=S1, x+y=S2 → x=S1-S2, y=S2-x
-  ()=>{
-    const x=randInt(2,20), y=randInt(2,20);
-    const S1=2*x+y, S2=x+y;
-    const askX=randChoice([true,false]);
-    return arith(`2x + y = ${S1}\nx + y = ${S2}\nMennyi ${askX?'x':'y'}?`, askX?x:y, '');
-  },
-];
 
 // ── Arányosság ────────────────────────────────────────
 const ARANYPL=[
@@ -1990,324 +1508,42 @@ function randNumer(d){
   return randInt(10,30);
 }
 
-// ── Törtek ────────────────────────────────────────────
-const TORTTPL=[
-  ()=>{
-    const d=randChoice([2,3,4,5,6,8,10,12]);
-    const n=randInt(1,d-1);
-    if(gcd(n,d)===1)return null;
-    const mult=randChoice([2,3,4].filter(m=>m*d<=60));
-    if(!mult)return null;
-    return fracEx(`Egyszerűsítsd: ${n*mult}/${d*mult} = ?`, n, d);
-  },
-  ()=>{
-    const den=randChoice([2,3,4,5]);
-    const part=randInt(2,10);
-    const W=part*den;
-    return arith(`${W} darab ${den===2?'fele':den===3?'harmada':den===4?'negyede':'ötöde'} = ?`, part, '');
-  },
-  ()=>{
-    const den1=randChoice([2,3,4,5,6,8,10]);
-    const num1=randInt(1,den1-1);
-    const den2=randChoice([2,3,4,5,6,8,10].filter(d=>d!==den1));
-    const num2=randInt(1,den2-1);
-    const cd=lcm(den1,den2);
-    const n1=num1*(cd/den1),n2=num2*(cd/den2);
-    if(n1===n2)return null;
-    const ansN=n1>n2?num1:num2, ansD=n1>n2?den1:den2;
-    return fracEx(`Melyik a nagyobb tört?\n${num1}/${den1}  vagy  ${num2}/${den2}`, ansN, ansD);
-  },
-  ()=>{
-    const [d1,d2]=randDenPair();
-    const a=randNumer(d1),b=randNumer(d2);
-    const cd=lcm(d1,d2);
-    return fracEx(`${a}/${d1} + ${b}/${d2} = ?`, a*(cd/d1)+b*(cd/d2), cd);
-  },
-  ()=>{
-    const [d1,d2]=randDenPair();
-    const a=randNumer(d1),b=randNumer(d2);
-    const cd=lcm(d1,d2);
-    const rn=a*(cd/d1)-b*(cd/d2);
-    if(rn<=0)return null;
-    return fracEx(`${a}/${d1} − ${b}/${d2} = ?`, rn, cd);
-  },
-  ()=>{
-    const d=randDen(),n=randInt(1,d-1),w=randInt(2,6);
-    return fracEx(`${n}/${d} × ${w} = ?`, n*w, d);
-  },
-  ()=>{
-    const d=randDen(),w=randChoice([2,3,4]);
-    const n=randInt(1,12);
-    return fracEx(`${n}/${d} ÷ ${w} = ?`, n, d*w);
-  },
-  ()=>{
-    const [d1,d2]=randDenPair();
-    const w=randInt(1,4),fn=randInt(1,d1-1);
-    const b=randInt(1,d2-1);
-    const cd=lcm(d1,d2);
-    const impN=w*d1+fn;
-    return fracEx(`${mixedStr(w,fn,d1)} + ${b}/${d2} = ?`, impN*(cd/d1)+b*(cd/d2), cd);
-  },
-  ()=>{
-    const [d1,d2]=randDenPair();
-    const w=randInt(2,5),fn=randInt(1,d1-1);
-    const b=randInt(1,d2-1);
-    const cd=lcm(d1,d2);
-    const impN=w*d1+fn;
-    const rn=impN*(cd/d1)-b*(cd/d2);
-    if(rn<=0)return null;
-    return fracEx(`${mixedStr(w,fn,d1)} − ${b}/${d2} = ?`, rn, cd);
-  },
-];
 
-// ── Tizedes törtek ────────────────────────────────────
-const TIZEDESTPL=[
-  ()=>{const a=(randInt(10,99)/10),b=(randInt(10,99)/10);const s=Math.round((a+b)*100)/100;return arith(`${hf(a)} + ${hf(b)} = ?`, hf(s), '');},
-  ()=>{const b=(randInt(10,99)/10),a=(randInt(Math.ceil(b*10),199)/10);const d=Math.round((a-b)*100)/100;return arith(`${hf(a)} − ${hf(b)} = ?`, hf(d), '');},
-  ()=>{const a=randChoice([0.1,0.2,0.25,0.5,0.75]),b=randInt(2,20);return arith(`${hf(a)} × ${b} = ?`, hf(Math.round(a*b*100)/100), '');},
-  ()=>{const b=randChoice([2,4,5,10]),a=randInt(1,20);return arith(`${a} ÷ ${b} = ?`, hf(a/b), '');},
-  ()=>{
-    const n=Math.round(randInt(100,999))/10;
-    const r=Math.round(n);
-    return arith(`Kerekítsd egészre: ${hf(n)}`, r, '');
-  },
-  ()=>{
-    const den=randChoice([2,4,5,10,20,25]);
-    const num=randInt(1,den-1);
-    return arith(`${num}/${den} = ? (tizedes tört)`, hf(num/den), '');
-  },
-];
 
 // ── Oszthatósági szabályok ────────────────────────────
 // Instrumental suffixes for divisors (2-vel, 3-mal, 5-tel, 9-cel, 10-zel)
 const DIV_SUF={2:'2-vel',3:'3-mal',5:'5-tel',9:'9-cel',10:'10-zel'};
 
-const OSZTHATÓSAGSZABALYTPL=[
-  ()=>{
-    const rules=[
-      {d:2,  test:n=>n%2===0,   rule:'2-vel (utolsó jegy páros)'},
-      {d:3,  test:n=>n%3===0,   rule:'3-mal (jegyek összege osztható 3-mal)'},
-      {d:5,  test:n=>n%5===0,   rule:'5-tel (0-ra vagy 5-re végződik)'},
-      {d:9,  test:n=>n%9===0,   rule:'9-cel (jegyek összege osztható 9-cel)'},
-      {d:10, test:n=>n%10===0,  rule:'10-zel (0-ra végződik)'},
-    ];
-    const rule=randChoice(rules);
-    const n=randInt(10,999);
-    return textArith(`Osztható-e a ${n} szám ${rule.rule.split(' ')[0]}? (igen/nem)`, rule.test(n)?'igen':'nem', '');
-  },
-  ()=>{
-    // exactly ONE of the four shown numbers is divisible — the old version
-    // picked from 6 candidates but showed only 4, so the stored answer could
-    // be undefined, or several shown numbers could all be valid
-    const d=randChoice([2,3,5,9]);
-    const good=randInt(2,20)*d;
-    const cands=[good];
-    while(cands.length<4){
-      const n=randInt(10,200);
-      if(n%d!==0&&!cands.includes(n))cands.push(n);
-    }
-    return arith(`Melyik osztható ${DIV_SUF[d]}?\n${shuffle(cands).join(', ')}`, good, '');
-  },
-  ()=>{
-    const n=randInt(10,99);
-    const sum=String(n).split('').reduce((a,c)=>a+parseInt(c),0);
-    return arith(`A ${n} szám jegyeinek összege = ?`, sum, '');
-  },
-  ()=>{
-    // ~50% igen / 50% nem — the old version always constructed a divisible n,
-    // so the answer was always "igen"
-    const d=randChoice([2,3,5]);
-    let n=randInt(1,9)*d*randInt(10,99);
-    const yes=_rng()<0.5;
-    if(!yes)n+=randInt(1,d-1);   // n was ≡ 0 (mod d), so this breaks divisibility
-    return textArith(`${n} osztható ${DIV_SUF[d]}? (igen/nem)`, yes?'igen':'nem', '');
-  },
-];
 
-// ── Méretarány ────────────────────────────────────────
-const MÉRETARÁNYTPL=[
-  ()=>{
-    const scale=randChoice([100,200,500,1000,2000,5000,10000]);
-    const mapCm=randInt(1,20);
-    const realM=mapCm*scale/100;
-    return arith(`Térkép léptéke 1:${scale}. A térképen ${mapCm} cm → valóságban hány m?`, realM, 'm');
-  },
-  ()=>{
-    const scale=randChoice([100,200,500,1000,2000]);
-    const realM=randInt(1,50)*scale/100;
-    const mapCm=realM*100/scale;
-    if(!Number.isInteger(mapCm)) return null;
-    return arith(`Léptéke 1:${scale}. A valóságban ${realM} m → térképen hány cm?`, mapCm, 'cm');
-  },
-  ()=>{
-    const scale=randChoice([50,100,200]);
-    const drawCm=randInt(2,15);
-    const realCm=drawCm*scale;
-    return arith(`Rajz léptéke 1:${scale}. A rajzon ${drawCm} cm → valóságban hány cm?`, realCm, 'cm');
-  },
-  ()=>{
-    const a=randInt(2,10),b=randInt(2,10);
-    const factor=randChoice([2,3,4,5]);
-    return arith(`Egy ${a} cm × ${b} cm-es téglalap oldalait ${factor}-szorosára nagyítják. Mekkora az új terület?`, a*factor*b*factor, 'cm²');
-  },
-];
 
-// ── Hasonlóság (8. osztály) ───────────────────────────
-const HASONLOSAGTPL=[
-  // megfelelő oldal kiszámítása az arányból
-  ()=>{
-    const k=randChoice([2,3,4,5]);
-    const a1=randInt(2,15);
-    return arith(`Két hasonló háromszög hasonlósági aránya ${k}:1. A kisebb háromszög egyik oldala ${a1} cm.\nMekkora a nagyobb háromszög megfelelő oldala?`, a1*k, 'cm');
-  },
-  ()=>{
-    const k=randChoice([2,3,4,5]);
-    const a2=randInt(2,15)*k;
-    return arith(`Két hasonló háromszög hasonlósági aránya ${k}:1. A nagyobb háromszög egyik oldala ${a2} cm.\nMekkora a kisebb háromszög megfelelő oldala?`, a2/k, 'cm');
-  },
-  // kerület lineárisan skálázódik
-  ()=>{
-    const k=randChoice([2,3,4,5]);
-    const kerulet=randInt(3,20)*k; // biztosan osztható k-val
-    return arith(`Két hasonló sokszög hasonlósági aránya ${k}:1. A nagyobb sokszög kerülete ${kerulet} cm.\nMekkora a kisebb sokszög kerülete?`, kerulet/k, 'cm');
-  },
-  // terület a hasonlóság négyzetével arányos
-  ()=>{
-    const k=randChoice([2,3,4]);
-    const t1=randInt(2,20);
-    return arith(`Két hasonló síkidom hasonlósági aránya ${k}:1. A kisebb síkidom területe ${t1} cm².\nMekkora a nagyobb síkidom területe?`, t1*k*k, 'cm²');
-  },
-];
 
-// ── Egyenlőtlenségek ──────────────────────────────────
-const EGYENLŐTLENSÉGTPL=[
-  ()=>{
-    // x + b < c  →  x < c-b  →  x_max = c-b-1
-    const b=randInt(1,15),k=randInt(1,5);
-    const c=b+k; // so x + b < c means x < k, largest integer is k-1
-    return arith(`x + ${b} < ${c}  →  x legnagyobb egész értéke?`, k-1, '');
-  },
-  ()=>{
-    const a=randInt(2,5),c=randInt(5,30);
-    const xMax=Math.floor(c/a);
-    return arith(`${a} · x ≤ ${c}  →  x legnagyobb egész értéke?`, xMax, '');
-  },
-  ()=>{
-    const nums=Array.from({length:5},()=>randInt(-10,10));
-    const sorted=[...nums].sort((a,b)=>a-b);
-    return textArith(`Rendezd növekvő sorrendbe: ${shuffle([...sorted]).join(', ')}\n(vesszővel elválasztva)`, sorted.join(', '), '');
-  },
-  ()=>{
-    const a=randInt(-9,9),b=randInt(-9,9);
-    if(a===b) return null;
-    return textArith(`${a} □ ${b} — melyik jel illik: <, > vagy =?`, a<b?'<':'>', '');
-  },
-  ()=>{
-    const n=randInt(-20,20),d=randChoice([2,3,4,5]);
-    if(n%d===0) return null;   // n/d egész lenne — nem "két egész szám között van"
-    const floored=Math.floor(n/d);
-    return arith(`${n}/${d} két egész szám között van. Melyik a kisebb egész?`, floored, '');
-  },
-];
 
-// ── Koordinátageometria ───────────────────────────────
-const KOORDINÁTATPL=[
-  ()=>{
-    const x=randInt(-8,8),y=randInt(-8,8);
-    const q=x===0||y===0?'tengely':x>0&&y>0?'I':x<0&&y>0?'II':x<0&&y<0?'III':'IV';
-    const alt={I:'1',II:'2',III:'3',IV:'4'}[q];   // arab számjegy is elfogadott
-    return textArith(`A(${x}, ${y}) pont melyik negyedben van?\n(I, II, III, IV, vagy tengely)`, q, '', alt?[alt]:undefined);
-  },
-  ()=>{
-    const x1=randInt(-5,5),y1=randInt(-5,5),x2=randInt(-5,5),y2=randInt(-5,5);
-    if(x1===x2&&y1===y2) return null;
-    const dx=Math.abs(x2-x1),dy=Math.abs(y2-y1);
-    if(dx===0) return arith(`A(${x1},${y1}) és B(${x1},${y2}) pont — AB távolsága?`, dy, 'egység');
-    if(dy===0) return arith(`A(${x1},${y1}) és B(${x2},${y1}) pont — AB távolsága?`, dx, 'egység');
-    return null;
-  },
-  ()=>{
-    const x=randInt(-9,9);
-    return arith(`A számegyenesen ${x} tükörképe a 0-ra?`, -x, '');
-  },
-  ()=>{
-    const x1=randInt(-5,5),x2=randInt(-5,5);
-    const mid=(x1+x2)/2;
-    if(!Number.isInteger(mid)) return null;
-    return arith(`A számegyenesen ${x1} és ${x2} felezőpontja?`, mid, '');
-  },
-  ()=>{
-    const x=randInt(-10,10),y=randInt(-10,10);
-    const axis=randChoice(['x','y']);
-    const rx=axis==='x'?x:-x, ry=axis==='y'?y:-y;
-    return textArith(`A(${x},${y}) tükörképe a(z) ${axis}-tengelyre?\n(pl. (3, −5) formában)`, `(${rx}, ${ry})`, '');
-  },
-];
 
 // ── Dispatch ──────────────────────────────────────────
 const ARITH_GENS={
-  LNKO: LNKOTPL,
-  LKKT: LKKTTPL,
   Hatványozás: HATVANYTPL,
-  Oszthatóság: OSZTHPL,
-  OszthatóságSzabály: OSZTHATÓSAGSZABALYTPL,
   NormálAlak: NORMALTPL,
   Négyzetgyök: NEGYZETGYOKTPL,
-  Kamat: KAMATTPL,
-  NegativSzam: NEGATIVTPL,
-  Alapmuveletek: ALAPMUVTPL,
-  Egyenlet: EGYENLTPL,
-  Egyenletrendszer: EGYENLETRENDSZERTPL,
-  Egyenlőtlenség: EGYENLŐTLENSÉGTPL,
   Aranyossag: ARANYPL,
-  Méretarány: MÉRETARÁNYTPL,
-  Hasonlóság: HASONLOSAGTPL,
-  Tortek: TORTTPL,
-  TizedesTort: TIZEDESTPL,
   SzázalékValue: SZAZALEKVALTPL,
   SzázalékRate: SZAZALEKRATETPL,
-  AlgebraValue: ALGEBRAVALTPL,
-  Koordináta: KOORDINÁTATPL,
   Statisztika: STATTPL,
   Valószínűség: VALOSZINUTPL,
   Kombinatorika: KOMBINATORIKATPL,
-  // ── Érettségi középszint ──
-  Halmaz: HALMAZTPL,
   KombinációC: KOMBINACIOTPL,
   Gráf: GRAFTPL,
-  Számrendszer: SZAMRENDSZERTPL,
-  SzámtaniSorozat: SZAMTANITPL,
-  MértaniSorozat: MERTANITPL,
-  KamatosKamat: KAMATOSTPL,
-  MásodfokúEgyenlet: MASODFOKUTPL,
   Exponenciális: EXPONENCIALISTPL,
-  MásodfokúFüggvény: MASODFOKUFVTPL,
-  LineárisFüggvény: LINEARISTPL,
   Kvartilis: KVARTILISTPL,
   VárhatóÉrték: VARHATOTPL,
-  // ── Érettségi emelt szint ──
-  BinomiálisEgyüttható: BINOMEGYUTTTPL,
-  PermutációIsm: PERMISMTPL,
-  Részhalmaz: RESZHALMAZTPL,
-  VégtelenSor: VEGTELENSORTPL,
   Logaritmus: LOGARITMUSTPL,
   LogEgyenlet: LOGEGYENLETTPL,
-  OsztókSzáma: OSZTOKSZAMATPL,
-  MásodfokúRendszer: MASODFOKURENDSZERTPL,
-  Deriválás: DERIVALASTPL,
-  Szélsőérték: SZELSOERTEKTPL,
-  Integrál: INTEGRALTPL,
-  Középértékek: KOZEPERTEKEKTPL,
-  BinomiálisEloszlás: BINOMELOSZLASTPL,
   Vektorok: VEKTOROKTPL,
   EgyenesNormál: EGYENESNORMALTPL,
   TrigonometriaValós: TRIGVALOSTPL,
 };
 
 // Categories whose answers can be negative (mobile decimal keypad has no minus)
-const TEXT_KEYBOARD_CATS=new Set(['NegativSzam','Koordináta','Egyenlőtlenség','Hatványozás',
-  'SzámtaniSorozat','MásodfokúFüggvény','LineárisFüggvény',
-  'Deriválás','Szélsőérték','Integrál','Vektorok','EgyenesNormál','TrigonometriaValós']);
+const TEXT_KEYBOARD_CATS=new Set(['Vektorok','EgyenesNormál','TrigonometriaValós']);
 
 function makeArith(cat){
   const pool=ARITH_GENS[cat];
