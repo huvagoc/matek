@@ -35,12 +35,8 @@
  *
  * USAGE
  * -----
- *   node check-quizzes.js file1.html file2.html ...
- *   node check-quizzes.js *.html
- *   node check-quizzes.js --dir /path/to/project        (checks every *.html in the dir)
- *   node check-quizzes.js --trials 200 grade8.html       (more trials = more confidence)
- *   node check-quizzes.js --dir /path/to/project --trials 100
- *
+ * node test/check-quizzes.js --dir . --jobs 28 --trials 10000
+
  * Exit code is 0 if every file is clean, 1 if any issue was found (handy for CI /
  * a pre-commit hook). Run this after editing any grade file, especially after
  * touching a shared helper (niceStr, parseNum, checkFracAnswer, etc.) or adding
@@ -51,6 +47,8 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const os = require('os');
+const { Worker, isMainThread, parentPort, workerData } = require('worker_threads');
 
 // ── minimal DOM shim ──────────────────────────────────────────────────────
 function makeElement(tag) {
@@ -253,50 +251,118 @@ function checkFile(fname, nTrials) {
   return { file: path.basename(fname), issues: deduped, tplCount };
 }
 
+if (!isMainThread) {
+    const { file, nTrials } = workerData;
+    parentPort.postMessage(checkFile(file, nTrials));
+    return;
+}
+
 // ── CLI ─────────────────────────────────────────────────────────────────
-function main() {
-  const args = process.argv.slice(2);
-  let nTrials = 60;
-  let files = [];
+async function main() {
+    const args = process.argv.slice(2);
 
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--trials') { nTrials = parseInt(args[++i], 10) || 60; }
-    else if (args[i] === '--dir') {
-      const dir = args[++i];
-      files.push(...fs.readdirSync(dir).filter(f => f.endsWith('.html')).map(f => path.join(dir, f)));
-    } else {
-      files.push(args[i]);
+    let nTrials = 60;
+    let files = [];
+
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--trials') {
+            nTrials = parseInt(args[++i], 10) || 60;
+        } else if (args[i] === '--dir') {
+            const dir = args[++i];
+            files.push(
+                ...fs.readdirSync(dir)
+                    .filter(f => f.endsWith('.html'))
+                    .map(f => path.join(dir, f))
+            );
+        } else {
+            files.push(args[i]);
+        }
     }
-  }
 
-  if (files.length === 0) {
-    console.log('Usage: node check-quizzes.js [--trials N] [--dir DIR] file1.html file2.html ...');
-    process.exit(1);
-  }
-
-  let anyIssues = false;
-  for (const f of files) {
-    const result = checkFile(f, nTrials);
-    if (result.loadError) {
-      anyIssues = true;
-      console.log(`✗ ${result.file}: FAILED TO LOAD — ${result.loadError}`);
-      continue;
+    if (files.length === 0) {
+        console.log("Usage: node check-quizzes.js [--trials N] [--dir DIR] file1.html ...");
+        process.exit(1);
     }
-    if (result.issues.length === 0) {
-      console.log(`✓ ${result.file}: ${result.tplCount} template arrays, ${nTrials} trials each — no issues`);
-    } else {
-      anyIssues = true;
-      console.log(`✗ ${result.file}: ${result.issues.length} issue(s) found`);
-      for (const iss of result.issues) {
-        console.log(`    [${iss.tpl}][${iss.idx}${iss.phIdx !== undefined ? '.' + iss.phIdx : ''}] ${iss.type}` +
-          (iss.field ? ` (${iss.field})` : '') +
-          (iss.val !== undefined ? `: ${JSON.stringify(iss.val)}` : '') +
-          (iss.msg ? `: ${iss.msg}` : ''));
-      }
-    }
-  }
 
-  process.exit(anyIssues ? 1 : 0);
+    const maxWorkers = Math.min(os.cpus().length, files.length);
+
+    let nextFile = 0;
+    let running = 0;
+    let anyIssues = false;
+
+    await new Promise(resolve => {
+
+        function launch() {
+
+            while (running < maxWorkers && nextFile < files.length) {
+
+                const worker = new Worker(__filename, {
+                    workerData: {
+                        file: files[nextFile++],
+                        nTrials
+                    }
+                });
+
+                running++;
+
+                worker.on("message", result => {
+
+                    if (result.loadError) {
+                        anyIssues = true;
+                        console.log(`✗ ${result.file}: FAILED TO LOAD — ${result.loadError}`);
+                    }
+                    else if (result.issues.length === 0) {
+                        console.log(
+                            `✓ ${result.file}: ${result.tplCount} template arrays, ${nTrials} trials each — no issues`
+                        );
+                    }
+                    else {
+                        anyIssues = true;
+
+                        console.log(
+                            `✗ ${result.file}: ${result.issues.length} issue(s) found`
+                        );
+
+                        for (const iss of result.issues) {
+                            console.log(
+                                `    [${iss.tpl}][${iss.idx}${iss.phIdx !== undefined ? "." + iss.phIdx : ""}] ${iss.type}` +
+                                (iss.field ? ` (${iss.field})` : "") +
+                                (iss.val !== undefined ? `: ${JSON.stringify(iss.val)}` : "") +
+                                (iss.msg ? `: ${iss.msg}` : "")
+                            );
+                        }
+                    }
+                });
+
+                worker.on("exit", () => {
+
+                    running--;
+
+                    if (nextFile < files.length) {
+                        launch();
+                    }
+                    else if (running === 0) {
+                        resolve();
+                    }
+                });
+
+                worker.on("error", err => {
+                    running--;
+                    anyIssues = true;
+                    console.error(err);
+
+                    if (nextFile < files.length)
+                        launch();
+                    else if (running === 0)
+                        resolve();
+                });
+            }
+        }
+
+        launch();
+    });
+
+    process.exit(anyIssues ? 1 : 0);
 }
 
 main();
