@@ -176,11 +176,24 @@ function checkFile(fname, nTrials) {
 
   let tplCount = 0;
 
+  const targets = [];
   for (const name of constNames) {
     let arr;
     try { arr = sandbox[name]; } catch { continue; }
     if (!Array.isArray(arr)) continue;
+    targets.push({ name, arr });
+  }
+  // The geometry generators live on an object — `const GEO={cat:[...]}` plus
+  // later `GEO['Cat']=[...]` assignments — so the const-array regex above
+  // never sees them. Sweep the object's array values directly.
+  const GEO = sandbox.GEO;
+  if (GEO && typeof GEO === 'object' && !Array.isArray(GEO)) {
+    for (const cat of Object.keys(GEO)) {
+      if (Array.isArray(GEO[cat])) targets.push({ name: `GEO[${cat}]`, arr: GEO[cat] });
+    }
+  }
 
+  for (const { name, arr } of targets) {
     const hasFn = arr.some(x => typeof x === 'function');
     const hasGenPh = arr.some(x => x && typeof x === 'object' && typeof x.gen === 'function' && Array.isArray(x.ph));
     if (!hasFn && !hasGenPh) continue;

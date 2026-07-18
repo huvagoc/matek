@@ -11,7 +11,7 @@
 <meta name="theme-color" content="#0e1411" media="(prefers-color-scheme: dark)">
 <script>
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
   }
 </script>
 <title>9. osztály – Matematika</title>
@@ -314,6 +314,39 @@ function parseNum(s){return parseFloat(String(s).trim().replace(',','.'))}
 // ── fraction helpers ──────────────────────────────────
 function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
 function lcm(a,b){return Math.abs(a*b)/gcd(a,b);}
+
+// ── magyar toldalék-segédek ───────────────────────────
+// Számjegyekkel írt szám toldaléka a KIMONDOTT alak utolsó tagjához igazodik:
+// 25 → "huszonöt" → öt; 110 → "száztíz" → tíz; 1500 → "ezerötszáz" → száz.
+function lastSpoken(n){
+  n=Math.abs(Math.round(n));
+  if(n===0)return 0;
+  if(n%10)return n%10;
+  if(n%100)return n%100;
+  if(n%1000)return 100;
+  return 1000;
+}
+const SUFF={
+  valVel:{0:'-val',1:'-gyel',2:'-vel',3:'-mal',4:'-gyel',5:'-tel',6:'-tal',7:'-tel',8:'-cal',9:'-cel',10:'-zel',20:'-szal',30:'-cal',40:'-nel',50:'-nel',60:'-nal',70:'-nel',80:'-nal',90:'-nel',100:'-zal',1000:'-rel'},
+  acc:   {0:'-t',1:'-et',2:'-t',3:'-at',4:'-et',5:'-öt',6:'-ot',7:'-et',8:'-at',9:'-et',10:'-et',20:'-at',30:'-at',40:'-et',50:'-et',60:'-at',70:'-et',80:'-at',90:'-et',100:'-at',1000:'-et'},
+  anEn:  {0:'-an',1:'-en',2:'-en',3:'-an',4:'-en',5:'-en',6:'-an',7:'-en',8:'-an',9:'-en',10:'-en',20:'-an',30:'-an',40:'-en',50:'-en',60:'-an',70:'-en',80:'-an',90:'-en',100:'-an',1000:'-en'},
+  szor:  {0:'-szor',1:'-szer',2:'-szer',3:'-szor',4:'-szer',5:'-ször',6:'-szor',7:'-szer',8:'-szor',9:'-szer',10:'-szer',20:'-szor',30:'-szor',40:'-szer',50:'-szer',60:'-szor',70:'-szer',80:'-szor',90:'-szer',100:'-szor',1000:'-szer'},
+  rol:   {0:'-ról',1:'-ről',2:'-ről',3:'-ról',4:'-ről',5:'-ről',6:'-ról',7:'-ről',8:'-ról',9:'-ről',10:'-ről',20:'-ról',30:'-ról',40:'-ről',50:'-ről',60:'-ról',70:'-ről',80:'-ról',90:'-ről',100:'-ról',1000:'-ről'},
+};
+function valVel(n){return SUFF.valVel[lastSpoken(n)];}   // -val/-vel (hasonulva: 3-mal, 5-tel)
+function acc(n){return SUFF.acc[lastSpoken(n)];}         // tárgyrag: 3-at, 5-öt
+function anEn(n){return SUFF.anEn[lastSpoken(n)];}       // hányan: 8-an, 9-en
+function rolRol(n){return SUFF.rol[lastSpoken(n)];}      // -ról/-ről
+// Tört is lehet ("1/2" → "ketted" → -szer); a nevező kimondott alakja dönt.
+function szorSzer(n){
+  const s=String(n);
+  const den=s.includes('/')?parseInt(s.split('/')[1],10):Number(n);
+  return SUFF.szor[lastSpoken(den)];
+}
+function szorosSzeres(n){const s=szorSzer(n);return s==='-szor'?'-szorosa':s==='-ször'?'-szöröse':'-szerese';}
+function szorosara(n){const s=szorSzer(n);return s==='-szor'?'-szorosára':s==='-ször'?'-szörösére':'-szeresére';}
+// "az" jár, ha a szám kimondva magánhangzóval kezdődik: egy; öt/ötven/ötszáz/ötezer…; ezer…
+function azA(n){n=Math.abs(n);return(n===1||String(n)[0]==='5'||(n>=1000&&n<2000))?'az':'a';}
 // Parse "a/b", "a", or "n a/b" (mixed number) → {n,d} or null
 function parseFrac(s){
   s=String(s).trim();
@@ -343,7 +376,7 @@ function checkFracAnswer(raw,ansN,ansD){
 
 // ── seeded PRNG (xorshift32) ──────────────────────────
 let _seed=1;
-function _rng(){_seed^=_seed<<13;_seed^=_seed>>17;_seed^=_seed<<5;return((_seed>>>0)/4294967296)}
+function _rng(){_seed^=_seed<<13;_seed^=_seed>>>17;_seed^=_seed<<5;return((_seed>>>0)/4294967296)}
 function randInt(a,b){return a+Math.floor(_rng()*(b-a+1))}
 function randChoice(a){return a[0|_rng()*a.length]}
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|_rng()*(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
@@ -352,10 +385,10 @@ function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|_rng(
 // Code format: "A3F7B-03F"  (5 hex seed digits = 20-bit seed + hyphen + 3 hex group-bitmask digits)
 // GROUPS order is fixed; bit 0 = GROUPS[0], bit 5 = GROUPS[5]
 // Older 2-digit codes (before teritest was added at index 8) are still accepted by the decoder.
-function encodeWorksheetCode(seed16,activeGroupsSet){
+function encodeWorksheetCode(seed20,activeGroupsSet){
   let mask=0;
   GROUPS.forEach((g,i)=>{if(activeGroupsSet.has(g.id))mask|=(1<<i);});
-  const s=seed16.toString(16).toUpperCase().padStart(5,'0');
+  const s=seed20.toString(16).toUpperCase().padStart(5,'0');
   const m=mask.toString(16).toUpperCase().padStart(3,'0');
   return`${s}-${m}`;
 }
@@ -627,8 +660,8 @@ function makeViz(v){
 // ═══════════════════════════════════════════════════════
 //  GEOMETRY GENERATORS
 // ═══════════════════════════════════════════════════════
-function geo(shape,given,ans,to,qLabel,viz){
-  return{isGeo:true,shape,given,ans,to,qLabel,viz};
+function geo(shape,given,ans,to,qLabel,viz,tol){
+  return{isGeo:true,shape,given,ans,to,qLabel,viz,tol};
 }
 
 // π approximation used for circle problems (Hungarian curriculum uses 3.14)
@@ -649,9 +682,9 @@ const GEO={
   ],
   KörTerület:[
     // hf(): π-s értékek vesszővel jelennek meg ("78,5" nem "78.5"); páros d → egész r
-    ()=>{const r=randInt(1,10); return geo('Kör',`r = ${r} cm`,hf(nicePI(PI*r*r)),'cm²','T',{t:'circle',r:`${r} cm`,in:'T = ?'})},
-    ()=>{const r=randInt(1,8);  return geo('Kör',`T = ${hf(nicePI(PI*r*r))} cm²`,String(r),'cm','r',{t:'circle',r:'?'})},
-    ()=>{const d=randInt(1,8)*2; return geo('Kör',`d = ${d} cm`,hf(nicePI(PI*(d/2)*(d/2))),'cm²','T',{t:'circle',r:`${d/2} cm`})},
+    ()=>{const r=randInt(1,10); return geo('Kör (π ≈ 3,14)',`r = ${r} cm`,hf(nicePI(PI*r*r)),'cm²','T',{t:'circle',r:`${r} cm`,in:'T = ?'})},
+    ()=>{const r=randInt(1,8);  return geo('Kör (π ≈ 3,14)',`T = ${hf(nicePI(PI*r*r))} cm²`,String(r),'cm','r',{t:'circle',r:'?'})},
+    ()=>{const d=randInt(1,8)*2; return geo('Kör (π ≈ 3,14)',`d = ${d} cm`,hf(nicePI(PI*(d/2)*(d/2))),'cm²','T',{t:'circle',r:`${d/2} cm`})},
   ],
   Kerület:[
     ()=>{
@@ -665,9 +698,9 @@ const GEO={
     ()=>{const a=randInt(4,20); return geo('Négyzet',`a = ${a} cm`,String(4*a),'cm','K',{t:'sq',a:`${a} cm`})},
     ()=>{const a=randInt(3,15),b=randInt(3,15); return geo('Paralelogramma',`a = ${a} cm, b = ${b} cm`,String(2*(a+b)),'cm','K',{t:'parap',a:`${a} cm`,b:`${b} cm`})},
     ()=>{const a=randInt(3,15); return geo('Rombusz',`a = ${a} cm`,String(4*a),'cm','K',{t:'rho',a:`${a} cm`})},
-    ()=>{const r=randInt(1,10); return geo('Kör',`r = ${r} cm`,hf(nicePI(2*PI*r)),'cm','K',{t:'circle',r:`${r} cm`})},
-    ()=>{const d=randInt(1,8)*2; return geo('Kör',`d = ${d} cm`,hf(nicePI(PI*d)),'cm','K',{t:'circle',r:`${d/2} cm`})},
-    ()=>{const r=randInt(1,8); return geo('Kör',`K = ${hf(nicePI(2*PI*r))} cm`,String(r),'cm','r',{t:'circle',r:'?'})},
+    ()=>{const r=randInt(1,10); return geo('Kör (π ≈ 3,14)',`r = ${r} cm`,hf(nicePI(2*PI*r)),'cm','K',{t:'circle',r:`${r} cm`})},
+    ()=>{const d=randInt(1,8)*2; return geo('Kör (π ≈ 3,14)',`d = ${d} cm`,hf(nicePI(PI*d)),'cm','K',{t:'circle',r:`${d/2} cm`})},
+    ()=>{const r=randInt(1,8); return geo('Kör (π ≈ 3,14)',`K = ${hf(nicePI(2*PI*r))} cm`,String(r),'cm','r',{t:'circle',r:'?'})},
   ],
   // Felület3D and Térfogat3D are defined further below (richer template sets,
   // registered additively onto this GEO object) — see near end of file.
@@ -810,7 +843,7 @@ const WORD_T=[
    ph:[
     d=>({text:`Egy osztályban ${d.A} tanuló focizik, ${d.B} kosarazik, és ${d.both} tanuló mindkettőt űzi. Hányan sportolnak a felsoroltak közül legalább az egyiket?`,unit:'tanuló'}),
     d=>({text:`Egy táborban ${d.A} gyerek szeret úszni, ${d.B} szeret kerékpározni, ${d.both} pedig mindkettőt szereti. Hány gyereknek tetszik legalább az egyik program?`,unit:'gyerek'}),
-    d=>({text:`Egy nyelvtanfolyamon ${d.A}-en tanulnak angolul, ${d.B}-en németül, ${d.both}-en mindkét nyelvet. Hányan tanulnak legalább egy nyelvet?`,unit:'fő'}),
+    d=>({text:`Egy nyelvtanfolyamon ${d.A}${anEn(d.A)} tanulnak angolul, ${d.B}${anEn(d.B)} németül, ${d.both}${anEn(d.both)} mindkét nyelvet. Hányan tanulnak legalább egy nyelvet?`,unit:'fő'}),
     d=>({text:`Egy rendezvényen ${d.A} vendég kávét, ${d.B} vendég teát kért, ${d.both} mindkettőt. Hány vendég kért kávét vagy teát?`,unit:'vendég'}),
     d=>({text:`Egy iskolai felmérésben ${d.A} diák szereti a matematikát, ${d.B} a fizikát, ${d.both} mindkettőt. Hány diáknak tetszik legalább az egyik tantárgy?`,unit:'diák'}),
     d=>({text:`Egy faluban ${d.A} háztartásban van kutya, ${d.B} háztartásban macska, ${d.both} háztartásban mindkettő. Hány háztartásban van legalább egy állat?`,unit:'háztartás'}),
@@ -850,21 +883,21 @@ const WORD_T=[
    },
    ph:[
     d=>{
-      const text = d.shape==='mul_add'  ? `${d.name} gondolt egy számra, megszorozta ${d.a}-val, majd hozzáadott ${d.b}-t. Az eredmény ${d.res} lett. Melyik számra gondolt?`
-                 : d.shape==='add_mul'  ? `${d.name} gondolt egy számra, hozzáadott ${d.b}-t, majd az összeget megszorozta ${d.a}-val. Az eredmény ${d.res} lett. Melyik számra gondolt?`
-                 :                        `${d.name} gondolt egy számra, megduplázta, majd hozzáadott ${d.b}-t. Az eredmény ${d.res} lett. Melyik számra gondolt?`;
+      const text = d.shape==='mul_add'  ? `${d.name} gondolt egy számra, megszorozta ${d.a}${valVel(d.a)}, majd hozzáadott ${d.b}${acc(d.b)}. Az eredmény ${d.res} lett. Melyik számra gondolt?`
+                 : d.shape==='add_mul'  ? `${d.name} gondolt egy számra, hozzáadott ${d.b}${acc(d.b)}, majd az összeget megszorozta ${d.a}${valVel(d.a)}. Az eredmény ${d.res} lett. Melyik számra gondolt?`
+                 :                        `${d.name} gondolt egy számra, megduplázta, majd hozzáadott ${d.b}${acc(d.b)}. Az eredmény ${d.res} lett. Melyik számra gondolt?`;
       return{text,unit:''};
     },
     d=>{
-      const text = d.shape==='mul_add'  ? `Egy szám és ${d.a} szorzatához ${d.b}-t adva ${d.res}-öt kapunk. Melyik ez a szám?`
-                 : d.shape==='add_mul'  ? `Egy szám ${d.b}-tel növelt értékét megszorozva ${d.a}-val ${d.res}-öt kapunk. Melyik ez a szám?`
-                 :                        `Egy szám kétszereséhez ${d.b}-t adva ${d.res}-öt kapunk. Melyik ez a szám?`;
+      const text = d.shape==='mul_add'  ? `Egy szám és ${d.a} szorzatához ${d.b}${acc(d.b)} adva ${d.res}${acc(d.res)} kapunk. Melyik ez a szám?`
+                 : d.shape==='add_mul'  ? `Egy szám ${d.b}${valVel(d.b)} növelt értékét megszorozva ${d.a}${valVel(d.a)} ${d.res}${acc(d.res)} kapunk. Melyik ez a szám?`
+                 :                        `Egy szám kétszereséhez ${d.b}${acc(d.b)} adva ${d.res}${acc(d.res)} kapunk. Melyik ez a szám?`;
       return{text,unit:''};
     },
     d=>{
-      const text = d.shape==='mul_add'  ? `${d.name} életkorát megszorozta ${d.a}-val, hozzáadott ${d.b}-t, és ${d.res}-öt kapott eredményül. Hány éves ${d.name}?`
-                 : d.shape==='add_mul'  ? `${d.name} egy szám és ${d.b} összegét megszorozta ${d.a}-val, így ${d.res}-öt kapott. Melyik számmal indult?`
-                 :                        `${d.name} egy szám kétszereséhez hozzáadott ${d.b}-t, így ${d.res}-öt kapott. Melyik számból indult ki?`;
+      const text = d.shape==='mul_add'  ? `${d.name} életkorát megszorozta ${d.a}${valVel(d.a)}, hozzáadott ${d.b}${acc(d.b)}, és ${d.res}${acc(d.res)} kapott eredményül. Hány éves ${d.name}?`
+                 : d.shape==='add_mul'  ? `${d.name} egy szám és ${d.b} összegét megszorozta ${d.a}${valVel(d.a)}, így ${d.res}${acc(d.res)} kapott. Melyik számmal indult?`
+                 :                        `${d.name} egy szám kétszereséhez hozzáadott ${d.b}${acc(d.b)}, így ${d.res}${acc(d.res)} kapott. Melyik számból indult ki?`;
       return{text,unit:''};
     },
   ]},
@@ -1106,9 +1139,6 @@ const OSZTHPL=[
 // Hungarian dative suffix: 1000-nek / 2000-nek (ezernek, kétezernek), otherwise -nak
 function nakNek(n){return(n===1000||n===2000)?`${n}-nek`:`${n}-nak`;}
 
-// "a" before a consonant-initial number word, "az" before a vowel-initial one
-// (egy, öt, and the ötven- tens all start with a vowel sound).
-function azA(n){return(n===1||n===5||(n>=50&&n<=59))?'az':'a';}
 const SZAZALEKVALTPL=[
   ()=>{
     const base=randChoice([100,200,300,400,500,1000,1500,2000]);
@@ -1239,7 +1269,7 @@ const GYOKTPL=[
   // gyöktelenítés: c/√m alakot bővítünk → az eredmény (c/m)·√m ; itt a szorzó a lényeg
   ()=>{
     const m=randChoice([2,3,5]), c=randInt(1,6)*m;   // c osztható m-mel → egész eredmény
-    return arith(`Gyöktelenítés után: ${c}/√${m} = a·√${m}.\nMennyi a?  ( bővíts √${m}-mel )`, c/m, '');
+    return arith(`Gyöktelenítés után: ${c}/√${m} = a·√${m}.\nMennyi a?  ( bővíts √${m}${m===2?'-vel':m===3?'-mal':'-tel'} )`, c/m, '');
   },
 ];
 
@@ -1300,7 +1330,7 @@ const HALMAZTPL=[
   ()=>{
     const both=randInt(2,10), onlyA=randInt(3,15), onlyB=randInt(3,15);
     const A=onlyA+both, B=onlyB+both, U=onlyA+onlyB+both;
-    return arith(`Egy csoportban ${A}-en tanulnak angolul, ${B}-en németül, és összesen ${U}-en tanulnak legalább egy nyelvet.\nHányan tanulják mindkét nyelvet?`, both, 'tanuló');
+    return arith(`Egy csoportban ${A}${anEn(A)} tanulnak angolul, ${B}${anEn(B)} németül, és összesen ${U}${anEn(U)} tanulnak legalább egy nyelvet.\nHányan tanulják mindkét nyelvet?`, both, 'tanuló');
   },
   // csak az egyik halmazba tartozók
   ()=>{
@@ -1543,7 +1573,7 @@ const MÉRETARÁNYTPL=[
   ()=>{
     const a=randInt(2,10),b=randInt(2,10);
     const factor=randChoice([2,3,4,5]);
-    return arith(`Egy ${a} cm × ${b} cm-es téglalap oldalait ${factor}-szorosára nagyítják. Mekkora az új terület?`, a*factor*b*factor, 'cm²');
+    return arith(`Egy ${a} cm × ${b} cm-es téglalap oldalait ${factor}${szorosara(factor)} nagyítják. Mekkora az új terület?`, a*factor*b*factor, 'cm²');
   },
 ];
 
@@ -1761,9 +1791,9 @@ function submitAnswer(){
       :`<span>✗</span><span>Helytelen – helyes válasz: <strong>${ex.ans}</strong></span>`;
   } else {
     const uv=parseNum(raw),cv=parseNum(ex.ans);
-    // Körcikk (and similar) answers are pre-rounded to 2 decimals via nicePI();
-    // a tolerance smaller than half a rounding step would reject an exact, correct answer.
-    ok=isFinite(uv)&&Math.abs(uv-cv)<6e-3;
+    // Pre-rounded answers (körcikk, trig, kúp/gömb térfogat) set ex.tol=6e-3;
+    // everything else uses the strict default.
+    ok=isFinite(uv)&&Math.abs(uv-cv)<(ex.tol??1e-9);
     msg=ok
       ?'<span>✓</span><span>Helyes!</span>'
       :`<span>✗</span><span>Helytelen – helyes válasz: <strong>${ex.ans} ${ex.to}</strong></span>`;
@@ -1802,9 +1832,9 @@ function handleKey(e){if(e.key==='Enter'&&!answered)submitAnswer();}
 // ─── print logic ──────────────────────────────────────
 function printWorksheet(){
   // Generate a random 20-bit seed for this worksheet (5 hex digits in the code)
-  const seed16 = (Math.random()*1048576)|0 || 1; // never 0
-  _seed = seed16;
-  const code = encodeWorksheetCode(seed16, activeGroups);
+  const seed20 = (Math.random()*1048576)|0 || 1; // never 0
+  _seed = seed20;
+  const code = encodeWorksheetCode(seed20, activeGroups);
 
   // Build questions with the seeded RNG
   const qs = buildQuiz();
@@ -2030,18 +2060,18 @@ GEO_CATS.add('Térfogat3D');
 GEO['HengerFelszín']=[
   ()=>{const r=randInt(2,10),m=randInt(3,20);
        const F=nicePI(2*PI*r*r+2*PI*r*m);
-       return geo('Henger',`r = ${r} cm,  m = ${m} cm`,hf(F),'cm²','F',{t:'cyl',r:`${r} cm`,m:`${m} cm`})},
+       return geo('Henger (π ≈ 3,14)',`r = ${r} cm,  m = ${m} cm`,hf(F),'cm²','F',{t:'cyl',r:`${r} cm`,m:`${m} cm`})},
   ()=>{const r=randInt(2,8),m=randInt(3,15);
        const F=nicePI(2*PI*r*r+2*PI*r*m);
-       return geo('Henger',`F = ${hf(F)} cm²,  r = ${r} cm`,String(m),'cm','m',{t:'cyl',r:`${r} cm`,m:'?'})},
+       return geo('Henger (π ≈ 3,14)',`F = ${hf(F)} cm²,  r = ${r} cm`,String(m),'cm','m',{t:'cyl',r:`${r} cm`,m:'?'})},
 ];
 GEO['HengerTérfogat']=[
   ()=>{const r=randInt(2,10),m=randInt(3,20);
        const V=nicePI(PI*r*r*m);
-       return geo('Henger',`r = ${r} cm,  m = ${m} cm`,hf(V),'cm³','V',{t:'cyl',r:`${r} cm`,m:`${m} cm`})},
+       return geo('Henger (π ≈ 3,14)',`r = ${r} cm,  m = ${m} cm`,hf(V),'cm³','V',{t:'cyl',r:`${r} cm`,m:`${m} cm`})},
   ()=>{const r=randInt(2,8),m=randInt(3,15);
        const V=nicePI(PI*r*r*m);
-       return geo('Henger',`V = ${hf(V)} cm³,  r = ${r} cm`,String(m),'cm','m',{t:'cyl',r:`${r} cm`,m:'?'})},
+       return geo('Henger (π ≈ 3,14)',`V = ${hf(V)} cm³,  r = ${r} cm`,String(m),'cm','m',{t:'cyl',r:`${r} cm`,m:'?'})},
 ];
 GEO_CATS.add('HengerFelszín');
 GEO_CATS.add('HengerTérfogat');
@@ -2097,12 +2127,12 @@ GEO['Kúp']=[
   ()=>{
     const r=randInt(2,10), l=randInt(r+2,25); // l (alkotó) mindig hosszabb, mint r
     const F=nicePI(PI*r*r+PI*r*l);
-    return geo('Kúp',`r = ${r} cm,  alkotó (l) = ${l} cm`,hf(F),'cm²','F',null);
+    return geo('Kúp (π ≈ 3,14)',`r = ${r} cm,  alkotó (l) = ${l} cm`,hf(F),'cm²','F',null);
   },
   ()=>{
     const r=randInt(2,10), h=randInt(3,20);
     const V=nicePI((PI*r*r*h)/3);
-    return geo('Kúp',`r = ${r} cm,  h (magasság) = ${h} cm`,hf(V),'cm³','V',null);
+    return geo('Kúp (π ≈ 3,14)',`r = ${r} cm,  h (magasság) = ${h} cm`,hf(V),'cm³','V',null,6e-3);
   },
 ];
 
@@ -2111,12 +2141,12 @@ GEO['Gömb']=[
   ()=>{
     const r=randInt(2,15);
     const F=nicePI(4*PI*r*r);
-    return geo('Gömb',`r = ${r} cm`,hf(F),'cm²','F',null);
+    return geo('Gömb (π ≈ 3,14)',`r = ${r} cm`,hf(F),'cm²','F',null);
   },
   ()=>{
     const r=randInt(2,15);
     const V=nicePI((4*PI*r*r*r)/3);
-    return geo('Gömb',`r = ${r} cm`,hf(V),'cm³','V',null);
+    return geo('Gömb (π ≈ 3,14)',`r = ${r} cm`,hf(V),'cm³','V',null,6e-3);
   },
 ];
 
@@ -2130,14 +2160,14 @@ GEO['Trigonometria']=[
     // α az 'a' befogóval szemközti szög: sin α = a/c
     const val=Math.round(a/c*100)/100;
     return geo('Derékszögű háromszög',`Az α szöggel szemközti befogó ${a} cm, az átfogó ${c} cm.`,hf(val),'','sin α (2 tizedesre)',
-               {t:'sc',a:`${a} cm`,b:`${b} cm`,c:`${c} cm`,aV:a,bV:b,cV:c});
+               {t:'sc',a:`${a} cm`,b:`${b} cm`,c:`${c} cm`,aV:a,bV:b,cV:c},6e-3);
   },
   // tan = szemközti / melletti — pontos tört esetek
   ()=>{
     const [a,b,c]=randChoice([[3,4,5],[6,8,10],[8,15,17]]);
     const val=Math.round(a/b*100)/100;
     return geo('Derékszögű háromszög',`Az α szöggel szemközti befogó ${a} cm, a mellette lévő befogó ${b} cm.`,hf(val),'','tan α (2 tizedesre)',
-               {t:'sc',a:`${a} cm`,b:`${b} cm`,c:`${c} cm`,aV:a,bV:b,cV:c});
+               {t:'sc',a:`${a} cm`,b:`${b} cm`,c:`${c} cm`,aV:a,bV:b,cV:c},6e-3);
   },
   // nevezetes szög: 30-60-90 vagy 45 fok — melléknév-mentesen, oldalarány
   ()=>{
@@ -2212,14 +2242,14 @@ GEO['Körcikk']=[
     const alpha=randChoice([30,45,60,72,90,120,180]);
     const r=randInt(1,6)*2;
     const T=nicePI((alpha/360)*PI*r*r);
-    return geo('Körcikk',`r = ${r} cm,  középponti szög α = ${alpha}°`,hf(T),'cm²','T (terület)',{t:'circle',r:`${r} cm`});
+    return geo('Körcikk (π ≈ 3,14)',`r = ${r} cm,  középponti szög α = ${alpha}°`,hf(T),'cm²','T (terület)',{t:'circle',r:`${r} cm`},6e-3);
   },
   // körcikk ívhossza: i = (α/360)·2rπ
   ()=>{
     const alpha=randChoice([30,45,60,72,90,120,180]);
     const r=randInt(1,6)*2;
     const i=nicePI((alpha/360)*2*PI*r);
-    return geo('Körcikk',`r = ${r} cm,  középponti szög α = ${alpha}°`,hf(i),'cm','i (ívhossz)',{t:'circle',r:`${r} cm`});
+    return geo('Körcikk (π ≈ 3,14)',`r = ${r} cm,  középponti szög α = ${alpha}°`,hf(i),'cm','i (ívhossz)',{t:'circle',r:`${r} cm`},6e-3);
   },
   // hányad rész: α fokos körcikk a teljes kör hányad része (tört)
   ()=>{
