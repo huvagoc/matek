@@ -7,7 +7,7 @@
  * then redeploy. Otherwise returning visitors keep serving the old cached
  * version. Changing this file is what triggers the update.
  */
-const CACHE = 'matek-v18';
+const CACHE = 'matek-v19';
 
 const FILES = [
   './',
@@ -22,6 +22,8 @@ const FILES = [
   'grade10.html',
   'grade11.html',
   'grade12.html',
+  'felveteli6.html',
+  'felveteli8.html',
   'kozepszint.html',
   'emelt.html',
   'manifest.json',
