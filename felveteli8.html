@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2d6a4f" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1411" media="(prefers-color-scheme: dark)">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+  }
+</script>
+<title>8. osztály – Központi felvételi</title>
+<style>
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ee;--surface:#fff;--border:#e0ddd5;
+  --text:#1a1916;--muted:#7a7870;
+  --accent:#2d6a4f;--accent-bg:#e8f4ef;
+  --ok:#166534;--ok-bg:#dcfce7;--ok-bd:#bbf7d0;
+  --err:#991b1b;--err-bg:#fee2e2;--err-bd:#fecaca;
+  --r:12px;--f:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif
+}
+html,body{height:100%}
+body{font-family:var(--f);background:var(--bg);color:var(--text);
+     display:flex;align-items:flex-start;justify-content:center;padding:1.25rem 1rem}
+.shell{width:100%;max-width:440px}
+.screen{display:none;flex-direction:column;gap:.85rem}
+.screen.active{display:flex}
+
+/* ── settings ── */
+.app-title{font-size:22px;font-weight:600;letter-spacing:-.3px}
+.app-sub{font-size:14px;color:var(--muted);margin-top:.2rem;margin-bottom:.5rem}
+
+.row-btn{display:flex;align-items:center;justify-content:space-between;
+         padding:13px 16px;background:var(--surface);border:1.5px solid var(--border);
+         border-radius:var(--r);cursor:pointer;font-family:var(--f);color:var(--text);
+         transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;
+         text-align:left}
+.row-btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.row-title{font-size:15px;font-weight:500}
+.row-sub{font-size:13px;opacity:.65;margin-top:.15rem}
+.row-check{font-size:17px;flex-shrink:0;margin-left:12px}
+
+/* ── shared button ── */
+.btn{display:flex;align-items:center;justify-content:center;
+     width:100%;padding:15px;background:var(--surface);border:1.5px solid var(--border);
+     border-radius:var(--r);font-size:16px;font-weight:500;font-family:var(--f);
+     color:var(--text);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn:active{background:var(--border)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{flex:1}
+
+/* ── progress ── */
+.progress-row{display:flex;align-items:center;gap:10px}
+.progress-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .35s}
+.progress-label{font-size:13px;color:var(--muted);min-width:36px;text-align:right}
+
+/* ── question card ── */
+.q-card{background:var(--surface);border:1.5px solid var(--border);
+        border-radius:var(--r);padding:1.2rem 1.25rem;text-align:center}
+.q-source{font-size:32px;font-weight:600;letter-spacing:-.5px;line-height:1.2}
+.q-word{font-size:15.5px;line-height:1.65;text-align:left;color:var(--text);padding:.1rem 0}
+.geo-label{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+           color:var(--muted);margin-bottom:.15rem}
+.geo-given{font-size:16px;font-weight:500;color:var(--text);margin-bottom:.1rem}
+.q-arrow{font-size:18px;color:var(--muted);margin:.3rem 0}
+.q-target{font-size:21px;color:var(--muted)}
+
+/* ── viz ── */
+#viz-tog{display:none;font-size:12px;color:var(--muted);background:none;border:none;
+         cursor:pointer;font-family:var(--f);padding:2px 4px;margin:0 auto .1rem;
+         -webkit-tap-highlight-color:transparent;opacity:.75}
+#viz-tog:hover{opacity:1}
+#q-viz svg{display:block;margin:.3rem auto 0;max-height:128px;width:100%;max-width:280px}
+
+/* ── input ── */
+.input-row{display:flex;gap:8px}
+.answer-input{flex:1;height:52px;padding:0 14px;font-size:22px;font-family:var(--f);
+              background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
+              color:var(--text);outline:none;transition:border-color .15s}
+.answer-input:focus{border-color:var(--accent)}
+.ok-btn{height:52px;width:64px;flex-shrink:0;background:var(--accent);color:#fff;border:none;
+        border-radius:var(--r);font-size:18px;font-weight:600;font-family:var(--f);
+        cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ok-btn:active{opacity:.85}
+
+/* ── feedback ── */
+.feedback{padding:13px 16px;border-radius:var(--r);font-size:15px;font-weight:500;
+          display:flex;align-items:center;gap:10px}
+.feedback.ok {background:var(--ok-bg); color:var(--ok); border:1px solid var(--ok-bd)}
+.feedback.err{background:var(--err-bg);color:var(--err);border:1px solid var(--err-bd)}
+.score-mini{font-size:13px;color:var(--muted);text-align:center}
+
+/* ── result ── */
+.result-center{text-align:center;padding:1rem 0}
+.result-medal{font-size:56px;margin-bottom:.75rem}
+.result-score{font-size:28px;font-weight:600}
+.result-pct{font-size:16px;color:var(--muted);margin-top:.25rem}
+
+/* ── keyboard compact ── */
+body.kb .q-card{padding:.55rem 1rem}
+body.kb .q-source{font-size:24px}
+body.kb .geo-label{font-size:11px}
+body.kb .geo-given{font-size:14px}
+body.kb #q-viz svg{max-height:88px}
+body.kb .q-arrow{font-size:14px;margin:.05rem 0}
+body.kb .q-target{font-size:17px}
+body.kb .answer-input{height:44px;font-size:18px}
+body.kb .ok-btn{height:44px}
+body.kb .feedback{padding:9px 13px;font-size:14px}
+body.kb .score-mini{display:none}
+body.kb .screen{gap:.5rem}
+
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1a1916;--surface:#252420;--border:#3a3835;--text:#f0ede8;--muted:#8a8780;
+        --accent:#4ade80;--accent-bg:#14301f;--ok:#4ade80;--ok-bg:#14301f;--ok-bd:#166534;
+        --err:#f87171;--err-bg:#2d0f0f;--err-bd:#7f1d1d}
+  .ok-btn{background:#166534}
+}
+
+/* ── print support QR (screen: hidden) ── */
+.print-support{display:none}
+
+/* ── print styles ── */
+#print-area { display: none; }
+@media print {
+  @page { margin: 1.5cm; }
+  body { background: #fff; padding: 0; display: block; }
+  .shell { display: none !important; }
+  #print-area { 
+    display: block !important; 
+    color: #000; 
+    font-family: var(--f);
+  }
+  .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 8px; }
+  .print-meta { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 25px; 
+    font-size: 14px; 
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 12px; 
+  }
+  .print-grid { 
+    display: grid; 
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 1.25rem 2rem; 
+  }
+  .print-item { 
+    break-inside: avoid; 
+    border-left: 2px solid #f0f0f0; 
+    padding-left: 14px; 
+    padding-bottom: 8px;
+  }
+  .print-item.wide { grid-column: 1 / -1; }
+  .print-num { font-weight: 700; margin-bottom: 6px; color: #888; font-size: 12px; text-transform: uppercase; }
+  .print-text { font-size: 15px; line-height: 1.45; color: #000; }
+  .print-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #666; margin-bottom: 3px; }
+  .print-given { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .print-target { font-size: 16px; margin-top: 10px; font-weight: 500; }
+  .print-viz { margin: 8px 0; }
+  .print-viz svg { max-width: 100%; height: auto; max-height: 120px; display: block; }
+  
+  /* Support QR codes — only visible in print */
+  .print-support { display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #eee; }
+  .print-support-item { text-align: center; font-size: 12px; color: #666; }
+  .print-support-item img { width: 72px; height: 72px; display: block; margin: 0 auto 4px; }
+  :root { 
+    --text: #000; 
+    --muted: #666; 
+    --accent: #000; 
+    --border: #ddd; 
+    --accent-bg: transparent;
+  }
+  svg text { fill: #000 !important; font-weight: 600 !important; }
+  svg line, svg path, svg rect, svg polygon { stroke: #000 !important; }
+}
+
+
+/* ══════════════════════════════════════════════════════
+   FELVÉTELI-SPECIFIC — multi-part task layout
+   ══════════════════════════════════════════════════════ */
+.shell{max-width:520px}
+
+/* ── mode switch ── */
+.mode-row{display:flex;gap:8px}
+.mode-btn{flex:1;padding:11px 10px;background:var(--surface);border:1.5px solid var(--border);
+          border-radius:var(--r);font-family:var(--f);font-size:14px;font-weight:500;color:var(--text);
+          cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:center;
+          transition:border-color .15s,background .15s}
+.mode-btn.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.mode-note{font-size:12.5px;color:var(--muted);line-height:1.5;padding:0 2px}
+
+/* ── task card ── */
+.task-card{background:var(--surface);border:1.5px solid var(--border);
+           border-radius:var(--r);padding:1.1rem 1.15rem;text-align:left}
+.task-head{display:flex;align-items:baseline;gap:8px;margin-bottom:.6rem}
+.task-no{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.task-topic{font-size:12px;color:var(--muted);margin-left:auto}
+.task-intro{font-size:15px;line-height:1.6;color:var(--text)}
+.task-intro b{font-weight:600}
+.task-viz{margin:.7rem 0}
+.task-viz svg{display:block;margin:0 auto;max-width:100%;height:auto;max-height:210px}
+
+/* ── data tables inside a task ── */
+.dtable{width:100%;border-collapse:collapse;margin:.7rem 0;font-size:13.5px}
+.dtable th,.dtable td{border:1px solid var(--border);padding:5px 7px;text-align:center}
+.dtable th{background:var(--accent-bg);font-weight:600;color:var(--accent)}
+.dtable td:first-child,.dtable th:first-child{text-align:left}
+
+/* ── parts (a, b, c …) ── */
+.part{border-top:1px solid var(--border);padding:.7rem 0 .1rem}
+.part:first-of-type{border-top:none;padding-top:.9rem}
+.part-q{display:flex;gap:9px;font-size:14.5px;line-height:1.55}
+.part-lbl{flex-shrink:0;width:19px;height:19px;border-radius:5px;background:var(--accent-bg);
+          color:var(--accent);font-size:12px;font-weight:700;display:flex;align-items:center;
+          justify-content:center;margin-top:1px}
+.part-in{display:flex;gap:7px;align-items:center;margin:.45rem 0 .1rem 28px}
+.part-in input{flex:1;min-width:0;height:42px;padding:0 12px;font-size:16px;font-family:var(--f);
+               background:var(--bg);border:1.5px solid var(--border);border-radius:9px;
+               color:var(--text);outline:none;transition:border-color .15s}
+.part-in input:focus{border-color:var(--accent)}
+.part-in input:disabled{opacity:.75}
+.part-unit{font-size:14px;color:var(--muted);flex-shrink:0}
+
+/* ── choice chips (biztos / lehetséges / lehetetlen, feleletválasztós) ── */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:.45rem 0 .1rem 28px}
+.chip{padding:8px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;
+      font-family:var(--f);font-size:13.5px;color:var(--text);cursor:pointer;
+      -webkit-tap-highlight-color:transparent;transition:border-color .15s,background .15s}
+.chip.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chip:disabled{cursor:default;opacity:.8}
+
+/* ── per-part verdict ── */
+.verdict{font-size:13px;font-weight:500;margin:.4rem 0 .1rem 28px;
+         display:flex;gap:7px;align-items:flex-start;line-height:1.5}
+.verdict.ok{color:var(--ok)}
+.verdict.err{color:var(--err)}
+.verdict b{font-weight:600}
+
+/* ── exam timer ── */
+.timer-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.timer{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;font-weight:600;
+       color:var(--text);letter-spacing:.02em}
+.timer.low{color:var(--err)}
+
+/* ── result breakdown ── */
+.bd-row{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface);
+        border:1.5px solid var(--border);border-radius:9px;font-size:14px}
+.bd-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bd-pts{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ══════════════════════════════════════════════════════
+   PRINT — official OH felvételi paper layout
+   ══════════════════════════════════════════════════════ */
+@media print{
+  .print-exam{font-size:12.5pt;line-height:1.5}
+  .print-exam .ex-cover{text-align:center;page-break-after:always}
+  .ex-org{font-size:11pt;letter-spacing:.18em;margin-bottom:2.2cm}
+  .ex-title{font-size:20pt;font-weight:700;letter-spacing:.04em}
+  .ex-for{font-size:14pt;margin-top:.3cm}
+  .ex-when{font-size:13pt;margin-top:1.1cm}
+  .ex-dur{font-size:12pt;margin-top:.15cm}
+  .ex-name{margin-top:1.6cm;text-align:left;font-size:12pt}
+  .ex-birth{display:flex;gap:.5cm;margin-top:.5cm;font-size:11pt;align-items:flex-end}
+  .ex-birth span{border-bottom:1px solid #000;min-width:2.2cm;display:inline-block}
+  .ex-info{margin-top:1.6cm;text-align:left;font-size:11pt;line-height:1.75;
+           border:1px solid #000;padding:.5cm .6cm}
+  .ex-info-t{font-weight:700;text-align:center;margin-bottom:.25cm}
+  .ex-foot{margin-top:1.4cm;font-size:11pt;letter-spacing:.14em}
+
+  .print-exam .ex-task{display:flex;gap:.35cm;break-inside:avoid;page-break-inside:avoid;
+                       margin-bottom:.75cm}
+  .ex-body{flex:1;min-width:0;border:1px solid #000;padding:.35cm .45cm .5cm}
+  .ex-no{width:.9cm;flex-shrink:0;font-weight:700;font-size:13pt;padding-top:.35cm}
+  .ex-pts{width:1.15cm;flex-shrink:0;border:1px solid #000;border-collapse:collapse}
+  .ex-pts div{border-bottom:1px solid #000;height:.62cm;font-size:9pt;padding-left:.1cm;
+              display:flex;align-items:center}
+  .ex-pts div:last-child{border-bottom:none}
+  .ex-intro{margin-bottom:.2cm}
+  .ex-intro b{font-weight:700}
+  .ex-viz{margin:.25cm 0}
+  .ex-viz svg{max-width:100%;height:auto;max-height:5.5cm;display:block;margin:0 auto}
+  .ex-part{margin-top:.3cm;display:flex;gap:.2cm}
+  .ex-part-l{flex-shrink:0;width:.6cm}
+  .ex-dots{border-bottom:1px dotted #000;flex:1;min-height:.55cm;margin-left:.2cm}
+  .ex-ans{margin-top:.15cm;display:flex;align-items:flex-end;gap:.2cm}
+  .print-exam .dtable{font-size:11pt}
+  .print-exam .dtable th{background:transparent;color:#000}
+  .print-exam .dtable th,.print-exam .dtable td{border:1px solid #000}
+  .ex-key{page-break-before:always}
+  .ex-key h2{font-size:15pt;margin-bottom:.4cm}
+  .ex-key div{font-size:11.5pt;line-height:1.75}
+}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- SETTINGS -->
+  <div class="screen active" id="screen-settings">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div>
+        <div class="app-title">🧮 Központi felvételi</div>
+        <div class="app-sub">8. évfolyam · központi írásbeli felvételi</div>
+      </div>
+      <a href="index.html" style="font-size:14px;font-weight:500;color:var(--muted);text-decoration:none;transition:color .15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">← Főoldal</a>
+    </div>
+
+    <div class="mode-row">
+      <button class="mode-btn on" id="mode-gyak" onclick="setMode('gyak')">Gyakorlás</button>
+      <button class="mode-btn" id="mode-eles" onclick="setMode('eles')">Éles vizsga · 45 perc</button>
+    </div>
+    <div class="mode-note" id="mode-note"></div>
+
+    <div style="display:flex;flex-direction:column;gap:10px" id="group-list"></div>
+    <div class="btn-row">
+      <button class="btn" id="start-btn" onclick="startQuiz()">Kezdjük! →</button>
+      <button class="btn" id="print-btn" onclick="printWorksheet()">Feladatlap (PDF)</button>
+    </div>
+
+    <!-- Answer key lookup -->
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="code-input" type="text" placeholder="Kód (pl. A3F7B-3FF)"
+             style="flex:1;height:44px;padding:0 12px;font-size:15px;font-family:var(--f);
+                    background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);
+                    color:var(--text);outline:none;transition:border-color .15s;letter-spacing:.05em"
+             maxlength="9"
+             oninput="this.value=this.value.toUpperCase()"
+             onkeydown="if(event.key==='Enter')solveFromCode()"/>
+      <button class="btn" style="width:auto;padding:0 18px;height:44px;flex-shrink:0"
+              onclick="solveFromCode()">Megoldások</button>
+    </div>
+    <div id="answer-key" style="display:none;background:var(--surface);border:1.5px solid var(--border);
+         border-radius:var(--r);padding:14px 16px;font-size:14px;line-height:1.8"></div>
+
+    <details style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:12px 15px;font-size:13.5px;color:var(--muted);line-height:1.6">
+      <summary style="cursor:pointer;font-weight:500;color:var(--text)">Az eredeti feladatlapokról</summary>
+      <p style="margin-top:8px">A feladattípusok az Oktatási Hivatal központi írásbeli felvételi
+      feladatlapjainak mintájára készültek, de minden feladat újragenerált, saját adatokkal.
+      A hivatalos, korábbi évek eredeti feladatlapjai és javítási útmutatói itt érhetők el:
+      <a href="https://www.oktatas.hu/kozneveles/kozepfoku_felveteli_eljaras/kozponti_feladatlapok" target="_blank" rel="noopener" style="color:var(--accent)">oktatas.hu — Központi feladatlapok</a>.</p>
+    </details>
+
+    <div id="support-links" style="text-align:center;font-size:13px;color:var(--muted)">
+      <a href="https://buymeacoffee.com/huvagoc" target="_blank" rel="noopener"
+         style="color:var(--muted);text-decoration:none;opacity:.7">☕ Buy me a coffee</a>
+      <span style="opacity:.4"> · </span>
+      <a href="https://revolut.me/huvagoc" target="_blank" rel="noopener"
+         style="color:var(--muted);text-decoration:none;opacity:.7">💸 Revolut</a>
+      <span style="opacity:.4"> · </span>
+      <a href="mailto:matek-kviz@pm.me"
+         style="color:var(--muted);text-decoration:none;opacity:.7">✉️ Visszajelzés</a>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);opacity:.5;margin-top:8px">
+      © 2026 Vágó Csaba –
+      <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener"
+         style="color:inherit;text-decoration:underline">CC BY-NC 4.0</a>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="progress-row">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">1/10</div>
+    </div>
+    <div class="timer-row" id="timer-row" style="display:none">
+      <span>Hátralévő idő</span><span class="timer" id="timer">45:00</span>
+      <button class="btn" style="width:auto;padding:6px 12px;height:auto;font-size:13px;margin-left:auto"
+              onclick="finishExam()">Beadom</button>
+    </div>
+    <div class="task-card" id="task-card"></div>
+    <button class="btn" id="check-btn" onclick="submitTask()">Ellenőrzés</button>
+    <button class="btn" id="next-btn" style="display:none" onclick="nextTask()">Következő feladat →</button>
+    <div class="score-mini" id="score-mini"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="screen" id="screen-result">
+    <div class="result-center">
+      <div class="result-medal" id="result-medal"></div>
+      <div class="result-score" id="result-score"></div>
+      <div class="result-pct"   id="result-pct"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:7px" id="result-breakdown"></div>
+    <div id="result-key" style="display:none;background:var(--surface);border:1.5px solid var(--border);
+         border-radius:var(--r);padding:14px 16px;font-size:14px;line-height:1.8"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="startQuiz()">Újra</button>
+      <button class="btn" onclick="showScreen('settings')">Beállítások</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- HIDDEN PRINT AREA -->
+<div id="print-area"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  8. ÉVFOLYAM — KÖZPONTI FELVÉTELI
+//  Feladattípusok az Oktatási Hivatal Mat1/Mat2 feladatlapjai
+//  mintájára: 10 feladat, betűjelzett részkérdések, 1 pont/rész.
+// ═══════════════════════════════════════════════════════
+const EXAM_META={forWhom:'a 8. évfolyamosok számára',slug:'8'};
+
+const GROUPS=[
+  {id:'abcd',   name:'🔢 A, B, C, D értéke',
+   sub:'Átlók száma, LKKT, medián, módusz, törtosztás'},
+  {id:'merteek',name:'📏 Mértékegységek',
+   sub:'Térfogat-, terület- és időegységek átváltása'},
+  {id:'felsorol',name:'📝 Összes eset felsorolása',
+   sub:'Rendszerezett összeszámlálás, esetszám'},
+  {id:'statiszt',name:'📊 Diagram és statisztika',
+   sub:'Oszlopdiagram, átlag, medián, módusz, százalék'},
+  {id:'koordin',name:'📍 Koordináta-geometria',
+   sub:'Tükrözés, felezőpont, negyedik csúcs, terület'},
+  {id:'egyenlet',name:'✏️ Szöveges egyenlet',
+   sub:'Ismeretlen felvétele, egyenlet felírása és megoldása'},
+  {id:'szogek',  name:'📐 Szögszámítás',
+   sub:'Egyenlő szárú háromszögek szögei ábra alapján'},
+  {id:'felelet', name:'✅ Feleletválasztós',
+   sub:'Számelmélet, geometria, exponenciális növekedés'},
+  {id:'terg',    name:'🧊 Összeragasztott hasábok',
+   sub:'Térfogat, felszín, kiszorított víz'},
+  {id:'eletkor', name:'👥 Életkor és arány',
+   sub:'Két ismeretlenes gondolkodtató szöveges feladat'},
+];
+
+const DIGSFX=['-ás','-es','-es','-as','-es','-ös','-os','-es','-as','-es'];
+function ds(d){return String(d)+DIGSFX[+String(d).slice(-1)]}
+const VOWL='aáeéiíoóöőuúüűAÁEÉIÍOÓÖŐUÚÜŰ';
+function art(w){return VOWL.includes(String(w)[0])?'az':'a'}
+function pt(x,y){return`(${x}; ${y})`}
+
+// ═══════════════════════════════════════════════════════
+//  1. A, B, C, D, E ÉRTÉKE
+// ═══════════════════════════════════════════════════════
+function genAbcd(){
+  const n=randInt(6,14);
+  const a=randInt(4,14),b=randInt(4,14);
+  if(a===b)throw 0;
+  const data=Array.from({length:9},()=>randInt(1,9));
+  const md=randChoice([1,2,3,4,5,6,7,8,9]);
+  data[randInt(0,8)]=md;data[randInt(0,8)]=md;data[randInt(0,8)]=md;   // biztos módusz
+  const counts={};data.forEach(x=>counts[x]=(counts[x]||0)+1);
+  const best=Math.max(...Object.values(counts));
+  if(Object.values(counts).filter(c=>c===best).length>1)throw 0;
+  const mode=+Object.keys(counts).find(k=>counts[k]===best);
+  const sorted=[...data].sort((x,y)=>x-y);
+  const med=sorted[4];
+  const [n1,d1,n2,d2]=[randInt(1,7),randInt(2,9),randInt(1,7),randInt(2,9)];
+  if(n1===d1||n2===d2)throw 0;
+  const parts=[
+    P('a',`<b>A</b> = egy konvex ${n}-szög átlóinak száma.`,n*(n-3)/2),
+    P('b',`<b>B</b> = ${a} és ${b} legkisebb közös többszöröse.`,lcm(a,b)),
+    P('c',`<b>C</b> = a következő adatsor mediánja: ${data.join('; ')}`,med),
+    P('d',`<b>D</b> = ugyanennek az adatsornak a módusza.`,mode),
+    Pfrac('e',`<b>E</b> = ${frac(n1,d1)} : ${frac(n2,d2)} értéke.`,n1*d2,d1*n2),
+  ];
+  return TASK('abcd','A, B, C, D, E értéke',
+    'Határozd meg a betűk helyére kerülő számokat! A számolás menetét is írd le!',parts);
+}
+
+// ═══════════════════════════════════════════════════════
+//  2. MÉRTÉKEGYSÉGEK
+// ═══════════════════════════════════════════════════════
+function genMerteek8(){
+  const parts=[];
+  {const m3=randInt(12,90);
+   parts.push(P('a',`${m3*1000} dm³ = ………… m³`,m3,{unit:'m³'}));}
+  {const cm=randInt(3,18)*10,m=randChoice([2,3,4]);
+   if(m*1000-cm*10<=0)throw 0;
+   parts.push(P('b',`${cm} cm + ………… mm = ${m} m`,m*1000-cm*10,{unit:'mm'}));}
+  {const nap=randInt(2,6),ora=randInt(3,20);
+   parts.push(P('c',`${nap} nap ${ora} óra = ………… óra`,nap*24+ora,{unit:'óra'}));}
+  {const ha=randChoice([1.5,2.5,0.75,3.2,0.4]);
+   parts.push(P('d',`${hf(ha)} hektár = ………… m²`,ha*10000,{unit:'m²'}));}
+  {const m3=randChoice([0.75,1.2,0.35,2.4]);
+   parts.push(P('e',`${hf(m3)} m³ = ………… liter`,Math.round(m3*1000),{unit:'liter'}));}
+  return TASK('merteek','Mértékegységek','Pótold a hiányzó mérőszámokat!',parts);
+}
+
+// ═══════════════════════════════════════════════════════
+//  3. ÖSSZES ESET FELSOROLÁSA
+// ═══════════════════════════════════════════════════════
+const FRUITS=[['alma','körte','szilva'],['banán','narancs','kivi'],['barack','szőlő','dinnye']];
+function genFelsorol(){
+  const F=randChoice(FRUITS);
+  const N=randInt(6,10);                       // ennyi darab kerül a dobozba
+  const all=[];
+  for(let x=1;x<N-1;x++)for(let y=1;x+y<N;y++){const z=N-x-y;if(z>=1)all.push([x,y,z]);}
+  const kmin=randInt(2,3);
+  const withMin=all.filter(t=>t[0]>=kmin);
+  const distinct=all.filter(t=>t[0]!==t[1]&&t[1]!==t[2]&&t[0]!==t[2]);
+  if(!withMin.length||!distinct.length)throw 0;
+  const parts=[
+    P('a',`Hányféleképpen állítható össze egy doboz? (A sorrend nem számít, csak a darabszámok.)`,
+      all.length,{unit:'féle'}),
+    P('b',`Hány összeállításban van legalább ${kmin} darab ${F[0]}?`,withMin.length,{unit:'féle'}),
+    P('c',`Hány olyan összeállítás van, amelyben mindhárom gyümölcsből különböző darabszám van?`,
+      distinct.length,{unit:'féle'}),
+  ];
+  return TASK('felsorol','Gyümölcsös doboz',
+    `Egy csomagolóüzemben ajándékdobozokat állítanak össze. Minden dobozba pontosan `+
+    `<b>${N} darab</b> gyümölcs kerül háromféle gyümölcsből: ${F[0]}, ${F[1]} és ${F[2]}. `+
+    `Mindegyik fajtából legalább egy darabnak lennie kell a dobozban.`,parts);
+}
+
+// ═══════════════════════════════════════════════════════
+//  4. DIAGRAM ÉS STATISZTIKA
+// ═══════════════════════════════════════════════════════
+function genStatiszt(){
+  const maxV=5;
+  const cnt=Array.from({length:maxV},()=>randInt(1,9));
+  const tot=cnt.reduce((a,b)=>a+b,0);
+  if(tot<15||tot>36)throw 0;
+  const best=Math.max(...cnt);
+  if(cnt.filter(c=>c===best).length>1)throw 0;
+  const mode=cnt.indexOf(best)+1;
+  const flat=[];cnt.forEach((c,i)=>{for(let j=0;j<c;j++)flat.push(i+1)});
+  const med=tot%2?flat[(tot-1)/2]:(flat[tot/2-1]+flat[tot/2])/2;
+  const sum=flat.reduce((a,b)=>a+b,0);
+  const avg=Math.round(sum/tot*100)/100;
+  const lim=randInt(2,maxV-1);
+  const over=flat.filter(x=>x>lim).length;
+  if(!over)throw 0;
+
+  // oszlopdiagram
+  const W=320,H=200,x0=34,y0=18,bw=(W-x0-16)/maxV,ph=H-y0-30;
+  let g=ln(x0-6,H-30,W-8,H-30,{w:1.5})+ln(x0-6,H-30,x0-6,y0-6,{w:1.5});
+  cnt.forEach((c,i)=>{
+    const h=c/9*ph,x=x0+i*bw+bw*0.18,w=bw*0.64;
+    g+=`<rect x="${x.toFixed(1)}" y="${(H-30-h).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" fill="${FILL2}" stroke="var(--text)" stroke-width="1.5"/>`;
+    g+=txt(x+w/2,H-30+13,String(i+1),{s:12});
+    g+=txt(x+w/2,H-30-h-9,String(c),{s:11,c:'var(--muted)'});
+  });
+  g+=txt(x0-6,y0-12,'db',{s:11,c:'var(--muted)',a:'middle'});
+  g+=txt(W-14,H-14,'pont',{s:11,c:'var(--muted)',a:'end'});
+  const viz=svg(W,H,g);
+
+  const parts=[
+    P('a',`Hányan írták meg a dolgozatot?`,tot,{unit:'fő'}),
+    P('b',`Mennyi az osztályzatok módusza?`,mode),
+    P('c',`Mennyi az osztályzatok mediánja?`,hf(med)),
+    P('d',`Mennyi az osztályzatok átlaga két tizedesjegyre kerekítve?`,hf(avg)),
+    P('e',`Hány tanuló ért el ${lim}-nél jobb eredményt?`,over,{unit:'fő'}),
+  ];
+  return TASK('statiszt','Dolgozateredmények',
+    `Egy osztály matematikadolgozatának eredményeit az alábbi oszlopdiagram mutatja. `+
+    `A vízszintes tengelyen az elért osztályzat, a függőlegesen a tanulók száma szerepel.`,parts,{viz});
+}
+
+// ═══════════════════════════════════════════════════════
+//  5. KOORDINÁTA-GEOMETRIA
+// ═══════════════════════════════════════════════════════
+function genKoordin(){
+  let ax=randInt(-6,-1),ay=randInt(1,5);
+  let bx=randInt(1,6),by=randInt(-5,-1);
+  const cx=randInt(1,6),cy=randInt(1,5);
+  if((ax+bx)%2)bx+=(bx<6?1:-1);                // egész felezőpont
+  if((ay+by)%2)by+=(by<-1?1:-1);
+  const dx=ax+cx-bx,dy=ay+cy-by;
+  if(Math.abs(dx)>9||Math.abs(dy)>7)throw 0;
+  const area=Math.abs((bx-ax)*(cy-ay)-(cx-ax)*(by-ay))/2;
+
+  // koordináta-rendszer
+  const U=17,W=320,H=250,ox=W/2,oy=H/2;
+  const X=v=>ox+v*U,Y=v=>oy-v*U;
+  let g='';
+  for(let i=-9;i<=9;i++){
+    g+=ln(X(i),Y(-7),X(i),Y(7),{w:.6,c:'var(--border)'});
+  }
+  for(let j=-7;j<=7;j++)g+=ln(X(-9),Y(j),X(9),Y(j),{w:.6,c:'var(--border)'});
+  g+=ln(X(-9),Y(0),X(9),Y(0),{w:1.6})+ln(X(0),Y(-7),X(0),Y(7),{w:1.6});
+  g+=txt(X(9)-2,Y(0)-10,'x',{s:11,c:'var(--muted)'})+txt(X(0)+11,Y(7)+4,'y',{s:11,c:'var(--muted)'});
+  g+=txt(X(1),Y(0)+11,'1',{s:10,c:'var(--muted)'});
+  [['A',ax,ay],['B',bx,by],['C',cx,cy]].forEach(([n,x,y])=>{
+    g+=dot(X(x),Y(y),4)+txt(X(x)+11,Y(y)-11,n,{fw:700,c:'var(--accent)'});
+  });
+  const viz=svg(W,H,g);
+
+  const parts=[
+    P('a',`Add meg az <i>A</i> pont origóra vonatkozó tükörképének koordinátáit!`,
+      pt(-ax,-ay),{kind:'text',ph:'(x; y)'}),
+    P('b',`Add meg a <i>B</i> pont <i>y</i> tengelyre vonatkozó tükörképének koordinátáit!`,
+      pt(-bx,by),{kind:'text',ph:'(x; y)'}),
+    P('c',`Add meg az <i>AB</i> szakasz felezőpontjának koordinátáit!`,
+      pt((ax+bx)/2,(ay+by)/2),{kind:'text',ph:'(x; y)'}),
+    P('d',`Hol van az a <i>D</i> pont, amelyre az <i>ABCD</i> négyszög paralelogramma?`,
+      pt(dx,dy),{kind:'text',ph:'(x; y)'}),
+    P('e',`Hány területegység az <i>ABC</i> háromszög területe?`,hf(area),{unit:'területegység'}),
+  ];
+  return TASK('koordin','Koordináta-geometria',
+    `A koordináta-rendszerben megadtuk az <i>A</i> ${pt(ax,ay)}, a <i>B</i> ${pt(bx,by)} `+
+    `és a <i>C</i> ${pt(cx,cy)} pontot.`,parts,{viz});
+}
+
+// ═══════════════════════════════════════════════════════
+//  6. SZÖVEGES EGYENLET
+// ═══════════════════════════════════════════════════════
+function genEgyenlet(){
+  if(_rng()<0.5){
+    // ── zsinór három részre ──
+    const k=randInt(4,20),m=randInt(2,4);
+    const x=randInt(8,40);
+    const L=x+(x+k)+m*(x+k);
+    const parts=[
+      P('a',`Hány centiméter hosszú a legrövidebb darab?`,x,{unit:'cm'}),
+      P('b',`Hány centiméter hosszú a középső darab?`,x+k,{unit:'cm'}),
+      P('c',`Hány centiméter hosszú a leghosszabb darab?`,m*(x+k),{unit:'cm'}),
+    ];
+    return TASK('egyenlet','Zsinór három darabban',
+      `Egy <b>${L} cm</b> hosszú zsinórt három darabra vágtunk. A második darab `+
+      `<b>${k} cm-rel</b> hosszabb az elsőnél, a harmadik darab pedig <b>${m}-szer</b> `+
+      `olyan hosszú, mint a második. Írj fel egyenletet, és oldd meg!`,parts);
+  }
+  // ── munkabér ──
+  const nap=randInt(18,30),ber=randInt(3,9)*1000,bir=randInt(2,6)*1000;
+  const hianyzott=randInt(2,6);
+  const osszeg=(nap-hianyzott)*ber-hianyzott*bir;
+  if(osszeg<=0)throw 0;
+  const parts=[
+    P('a',`Hány napot hiányzott a mesterlegény?`,hianyzott,{unit:'nap'}),
+    P('b',`Hány napon dolgozott?`,nap-hianyzott,{unit:'nap'}),
+    P('c',`Hány forintot kapott volna, ha egyetlen napot sem hiányzik?`,nap*ber,{unit:'Ft'}),
+  ];
+  return TASK('egyenlet','A mesterlegény bére',
+    `Egy mesterlegény <b>${nap} napra</b> szegődött el. Minden ledolgozott napért `+
+    `<b>${ber.toLocaleString('hu-HU')} Ft-ot</b> kapott, viszont minden hiányzott napért `+
+    `<b>${bir.toLocaleString('hu-HU')} Ft</b> büntetést fizetett. A ${nap} nap letelte után `+
+    `összesen <b>${osszeg.toLocaleString('hu-HU')} Ft-ot</b> vitt haza. `+
+    `Írj fel egyenletet, és oldd meg!`,parts);
+}
+
+// ═══════════════════════════════════════════════════════
+//  7. SZÖGSZÁMÍTÁS
+// ═══════════════════════════════════════════════════════
+function genSzogek(){
+  const phi=randInt(4,9)*10, psi=randInt(4,9)*10;
+  if(phi+psi>160||phi+psi<80)throw 0;
+  const omega=180-phi-psi;
+  if(omega<20)throw 0;
+  const R=88,W=320,H=180,ox=W/2,oy=H-28;
+  const pol=(deg)=>[ox+R*Math.cos(Math.PI*deg/180),oy-R*Math.sin(Math.PI*deg/180)];
+  const D=pol(180),C=pol(0),A=pol(180-phi),B=pol(omega),E=[ox,oy];
+  let g='';
+  g+=ln(D[0],D[1],C[0],C[1]);
+  g+=ln(E[0],E[1],A[0],A[1])+ln(E[0],E[1],B[0],B[1]);
+  g+=ln(D[0],D[1],A[0],A[1])+ln(A[0],A[1],B[0],B[1])+ln(B[0],B[1],C[0],C[1]);
+  g+=ln(D[0],D[1],B[0],B[1],{w:1.2,dash:'4 3',c:'var(--muted)'});
+  g+=`<path d="M ${(E[0]+26).toFixed(1)} ${E[1].toFixed(1)} A 26 26 0 0 0 ${(E[0]+26*Math.cos(Math.PI*omega/180)).toFixed(1)} ${(E[1]-26*Math.sin(Math.PI*omega/180)).toFixed(1)}" fill="none" stroke="var(--accent)" stroke-width="1.6"/>`;
+  [['D',D,-14,14],['C',C,14,14],['A',A,-12,-10],['B',B,12,-10],['E',E,0,16]].forEach(([n,p,dx,dy])=>{
+    g+=dot(p[0],p[1],3.5)+txt(p[0]+dx,p[1]+dy,n,{fw:700});
+  });
+  // a szögcímkék a megfelelő szögtartomány szögfelezőjére kerülnek
+  const lab=(deg,r,s2)=>txt(ox+r*Math.cos(Math.PI*deg/180),oy-r*Math.sin(Math.PI*deg/180),
+                            s2,{s:11.5,c:'var(--accent)',fw:700});
+  g+=lab(180-phi/2,38,`${phi}°`);
+  g+=lab(180-phi-psi/2,38,`${psi}°`);
+  g+=lab(omega/2,20,'?');
+  const viz=svg(W,H,g);
+
+  const parts=[
+    P('a',`Hány fokos a <i>BEC</i> szög?`,omega,{unit:'°'}),
+    P('b',`Hány fokos az <i>EBA</i> szög?`,(180-psi)/2,{unit:'°'}),
+    P('c',`Hány fokos a <i>DAB</i> szög?`,(180-phi)/2+(180-psi)/2,{unit:'°'}),
+    P('d',`Hány fokos az <i>ADB</i> szög?`,psi/2,{unit:'°'}),
+  ];
+  return TASK('szogek','Szögszámítás',
+    `Az ábrán a <i>D</i>, <i>E</i> és <i>C</i> pontok egy egyenesen vannak, továbbá `+
+    `<i>ED</i> = <i>EA</i> = <i>EB</i> = <i>EC</i>. Az <i>AED</i> szög <b>${phi}°</b>, `+
+    `az <i>AEB</i> szög <b>${psi}°</b>. Számításaidat írd le!`,parts,{viz});
+}
+
+// ═══════════════════════════════════════════════════════
+//  8. FELELETVÁLASZTÓS
+// ═══════════════════════════════════════════════════════
+function genFelelet(){
+  const parts=[];
+
+  // a) oszthatóság
+  {let good=randInt(3,16)*6; if(good%4)good*=2;
+   const bad=pickN([good+2,good+3,good-2,good+9,good-4,good+6],3);
+   parts.push(P('a','Az alábbiak közül melyik szám osztható 6-tal is és 4-gyel is?',
+     String(good),{kind:'choice',choices:shuffle([String(good),...bad.map(String)])}));}
+
+  // b) átlók száma
+  {const n=randInt(6,12),ok=n*(n-3)/2;
+   parts.push(P('b',`Hány átlója van egy konvex ${n}-szögnek?`,String(ok),
+     {kind:'choice',choices:shuffle([String(ok),String(ok+n),String(ok-2),String(n*(n-3))])}));}
+
+  // c) algák
+  {const nap=randInt(10,30);
+   parts.push(P('c',`Egy tavon az algák által borított terület naponta a kétszeresére nő. `+
+     `A ${nap}. napra a tó teljes felületét beborítják. Hányadik napon borította az algaszőnyeg `+
+     `a tó felületének a felét?`,String(nap-1),
+     {kind:'choice',choices:shuffle([String(nap-1),String(nap-3),String(nap-2),'2'])}));}
+
+  // d) állítás négyszögekről
+  {const O=[
+     ['Minden rombusz átlói merőlegesek egymásra.',true],
+     ['Minden téglalap négyzet.',false],
+     ['Minden paralelogramma átlói egyenlő hosszúak.',false],
+     ['Minden deltoidnak van szimmetriatengelye.',true],
+     ['Minden trapéznak két párhuzamos oldalpárja van.',false],
+     ['Minden négyzet rombusz.',true],
+   ];
+   const t=randChoice(O.filter(o=>o[1])),f=pickN(O.filter(o=>!o[1]),2);
+   const opts=shuffle([t[0],...f.map(x=>x[0])]);
+   parts.push(P('d','Az alábbi állítások közül melyik <b>igaz</b>?',t[0],
+     {kind:'choice',choices:opts}));}
+
+  return TASK('felelet','Feleletválasztós kérdések',
+    'Minden kérdésnél pontosan egy jó válasz van. Jelöld meg!',parts);
+}
+
+// ═══════════════════════════════════════════════════════
+//  9. ÖSSZERAGASZTOTT HASÁBOK
+// ═══════════════════════════════════════════════════════
+function genTerg(){
+  const a=randInt(6,10),b=randInt(4,7),h1=randInt(2,4);
+  const p=randInt(2,a-3),q=randInt(2,b-2),h2=randInt(2,5);
+  const V=a*b*h1+p*q*h2;
+  const F=2*(a*b+h1*(a+b))+2*h2*(p+q);
+  // ábra: alsó hasáb + rátett kisebb hasáb
+  const KD2=0.4,s=Math.min(230/(a+b*KD2),120/(h1+h2+b*KD2));
+  const W=320,H=210,ox=(W-(a+b*KD2)*s)/2,oy=H-24;
+  const pr=(x,y,z)=>[ox+(x+z*KD2)*s,oy-(y+z*KD2)*s];
+  const boxAt=(x0,z0,w,d,y0,y1,fill)=>{
+    const A1=pr(x0,y0,z0),B1=pr(x0+w,y0,z0),C1=pr(x0+w,y1,z0),D1=pr(x0,y1,z0);
+    const A2=pr(x0,y0,z0+d),B2=pr(x0+w,y0,z0+d),C2=pr(x0+w,y1,z0+d),D2=pr(x0,y1,z0+d);
+    let o=poly([C1,C2,B2,B1],{f:fill})+poly([D1,C1,C2,D2],{f:fill})+poly([D1,C1,B1,A1],{f:fill});
+    return o;
+  };
+  let g=boxAt(0,0,a,b,0,h1,FILL);
+  g+=boxAt((a-p)/2,(b-q)/2,p,q,h1,h1+h2,FILL2);
+  g+=txt(...pr(a/2,0,0).map((v,i)=>i?v+16:v),`${a} cm`,{s:12});
+  g+=txt(pr(a,h1/2,0)[0]+18,pr(a,h1/2,0)[1],`${h1} cm`,{s:12,rot:-90});
+  g+=txt(pr((a-p)/2,h1+h2/2,(b-q)/2)[0]-20,pr((a-p)/2,h1+h2/2,(b-q)/2)[1],`${h2} cm`,{s:12,rot:-90});
+  const viz=svg(W,H,g);
+
+  const parts=[
+    P('a',`Hány köbcentiméter a test térfogata?`,V,{unit:'cm³'}),
+    P('b',`Hány négyzetcentiméter a test felszíne?`,F,{unit:'cm²'}),
+    P('c',`Hány 1 cm élű kiskockából lehetne a testet kirakni?`,V,{unit:'db'}),
+    P('d',`Hány liter vizet szorít ki a test, ha teljesen vízbe merítjük?`,
+      hf(V/1000),{unit:'liter'}),
+  ];
+  return TASK('terg','Összeragasztott hasábok',
+    `Két téglatestet ragasztottunk össze az ábrán látható módon. Az alsó téglatest `+
+    `${a} cm × ${b} cm alapú és ${h1} cm magas, a rá ragasztott felső téglatest `+
+    `${p} cm × ${q} cm alapú és ${h2} cm magas. A felső téglatest teljes egészében `+
+    `az alsó fedőlapján áll.`,parts,{viz});
+}
+
+// ═══════════════════════════════════════════════════════
+//  10. ÉLETKOR ÉS ARÁNY
+// ═══════════════════════════════════════════════════════
+function genEletkor(){
+  if(_rng()<0.5){
+    const nev=randChoice(['Tibi','Gábor','Zoli','Bálint']);
+    const X=randInt(2,6),k=randInt(2,4);
+    const n=randInt(X+4,X+14);                 // az unokaöcs mai kora
+    const d=(k-1)*(n-X);                       // korkülönbség
+    const T=n+d;
+    if(T>75||d<=n)throw 0;
+    const parts=[
+      P('a',`Hány éves most az unokaöccse?`,n,{unit:'éves'}),
+      P('b',`Hány éves most ${nev}?`,T,{unit:'éves'}),
+      P('c',`Hány év múlva lesz ${nev} pontosan kétszer annyi idős, mint az unokaöccse?`,
+        d-n,{unit:'év'}),
+    ];
+    return TASK('eletkor','Életkorok',
+      `${nev} <b>${d} évvel</b> idősebb az unokaöccsénél. <b>${X} évvel ezelőtt</b> `+
+      `${nev} pontosan <b>${k}-szer</b> annyi idős volt, mint az unokaöccse.`,parts);
+  }
+  // ── arányos osztás ──
+  const [r1,r2,r3]=pickN([2,3,4,5,6,7,9],3).sort((a,b)=>a-b);
+  const u=randInt(4,14);
+  const S=(r1+r2+r3)*u;
+  const parts=[
+    P('a',`Hány darab dió jutott a legkisebb részt kapó gyereknek?`,r1*u,{unit:'db'}),
+    P('b',`Hány darab dió jutott a legnagyobb részt kapó gyereknek?`,r3*u,{unit:'db'}),
+    P('c',`Hány darabbal kapott többet a legnagyobb részt kapó, mint a legkisebbet kapó?`,
+      (r3-r1)*u,{unit:'db'}),
+  ];
+  return TASK('eletkor','Arányos osztás',
+    `Nagymama <b>${S} darab</b> diót osztott szét három unokája között úgy, hogy `+
+    `a kapott mennyiségek aránya <b>${r1} : ${r2} : ${r3}</b> legyen.`,parts);
+}
+
+// ═══════════════════════════════════════════════════════
+const TASKGEN={
+  abcd:genAbcd, merteek:genMerteek8, felsorol:genFelsorol, statiszt:genStatiszt,
+  koordin:genKoordin, egyenlet:genEgyenlet, szogek:genSzogek, felelet:genFelelet,
+  terg:genTerg, eletkor:genEletkor,
+};
+
+
+// ═══════════════════════════════════════════════════════
+//  HELPERS  (kept name- and behaviour-identical to the
+//  grade3–12 / érettségi files so fixes stay portable)
+// ═══════════════════════════════════════════════════════
+function niceStr(v){
+  if(!isFinite(v))return String(v);
+  const r=Math.round(v*1e6)/1e6;
+  if(Number.isInteger(r))return String(r);
+  return String(r).replace('.',',');
+}
+function parseNum(s){return parseFloat(String(s).trim().replace(',','.'))}
+function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
+
+// ── fraction helpers ──────────────────────────────────
+function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
+function lcm(a,b){return Math.abs(a*b)/gcd(a,b);}
+function parseFrac(s){
+  const t=String(s).trim().replace(',','.');
+  let m=t.match(/^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/);
+  if(m){const w=+m[1],n=+m[2],d=+m[3];if(!d)return null;const sg=w<0?-1:1;return{n:sg*(Math.abs(w)*d+n),d};}
+  m=t.match(/^(-?\d+)\s*\/\s*(\d+)$/);
+  if(m){const d=+m[2];if(!d)return null;return{n:+m[1],d};}
+  m=t.match(/^-?\d+(\.\d+)?$/);
+  if(m){const v=parseFloat(t);const d=1e6;return{n:Math.round(v*d),d};}
+  return null;
+}
+function reduceFrac(n,d){if(d<0){n=-n;d=-d;}const g=gcd(Math.abs(n),d)||1;return{n:n/g,d:d/g};}
+function fmtFrac(n,d){return d===1?String(n):`${n}/${d}`;}
+function fracEq(n1,d1,n2,d2){return n1*d2===n2*d1;}
+function checkFracAnswer(raw,ansN,ansD){
+  const p=parseFrac(raw);
+  if(!p||!p.d)return'wrong';
+  if(!fracEq(p.n,p.d,ansN,ansD))return'wrong';
+  const r=reduceFrac(p.n,p.d),a=reduceFrac(ansN,ansD);
+  return(r.n===p.n&&r.d===p.d)||(p.d===a.d)?'exact':'unsimplified';
+}
+
+// ── text normalisation ────────────────────────────────
+function normText(s){
+  return String(s).toLowerCase()
+    .replace(/\s+/g,'')
+    .replace(/[·x×*]/g,'*')
+    .replace(/[()]/g,'')
+    .replace(/;/g,',')
+    .replace(/[–−]/g,'-');
+}
+function splitSet(s){
+  return String(s).split(/[,;\s]+/).map(x=>normText(x)).filter(Boolean);
+}
+
+// ── seeded PRNG (xorshift32) ──────────────────────────
+let _seed=1;
+function _rng(){_seed^=_seed<<13;_seed^=_seed>>17;_seed^=_seed<<5;return((_seed>>>0)/4294967296)}
+function randInt(a,b){return a+Math.floor(_rng()*(b-a+1))}
+function randChoice(a){return a[0|_rng()*a.length]}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|_rng()*(i+1);[b[i],b[j]]=[b[j],b[i]]}return b}
+function pickN(a,n){return shuffle(a).slice(0,n)}
+
+// ── seed encode/decode ────────────────────────────────
+// Code format: "A3F7B-3FF" — 5 hex seed digits (20-bit) + 3 hex group-bitmask
+// digits (10 task families need more than 8 bits). 2-digit masks are still
+// accepted so older printed codes keep working.
+function encodeWorksheetCode(seed16,activeGroupsSet){
+  let mask=0;
+  GROUPS.forEach((g,i)=>{if(activeGroupsSet.has(g.id))mask|=(1<<i);});
+  const s=seed16.toString(16).toUpperCase().padStart(5,'0');
+  const m=mask.toString(16).toUpperCase().padStart(3,'0');
+  return`${s}-${m}`;
+}
+function decodeWorksheetCode(code){
+  const m=String(code).trim().toUpperCase().match(/^([0-9A-F]{5})-([0-9A-F]{2,3})$/);
+  if(!m)return null;
+  const seed=parseInt(m[1],16);
+  const mask=parseInt(m[2],16);
+  if(mask>=(1<<GROUPS.length))return null;
+  const groups=new Set();
+  GROUPS.forEach((g,i)=>{if(mask&(1<<i))groups.add(g.id);});
+  if(!groups.size)return null;
+  return{seed,groups};
+}
+
+// ═══════════════════════════════════════════════════════
+//  SVG UTILITIES
+// ═══════════════════════════════════════════════════════
+function svg(w,h,body){
+  return`<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img">${body}</svg>`;
+}
+function ln(x1,y1,x2,y2,o){
+  o=o||{};
+  return`<line x1="${+x1.toFixed(1)}" y1="${+y1.toFixed(1)}" x2="${+x2.toFixed(1)}" y2="${+y2.toFixed(1)}"`+
+         ` stroke="${o.c||'var(--text)'}" stroke-width="${o.w||2}"`+
+         (o.dash?` stroke-dasharray="${o.dash}"`:'')+` stroke-linecap="round"/>`;
+}
+function txt(x,y,s,o){
+  o=o||{};
+  return`<text x="${+x.toFixed(1)}" y="${+y.toFixed(1)}" text-anchor="${o.a||'middle'}"`+
+         ` dominant-baseline="${o.b||'central'}" font-size="${o.s||13}"`+
+         ` fill="${o.c||'var(--text)'}" font-weight="${o.fw||500}"`+
+         (o.rot!=null?` transform="rotate(${o.rot},${+x.toFixed(1)},${+y.toFixed(1)})"`:'')+
+         `>${s}</text>`;
+}
+function poly(pts,o){
+  o=o||{};
+  return`<polygon points="${pts.map(p=>p.map(n=>+n.toFixed(1)).join(',')).join(' ')}"`+
+         ` fill="${o.f||'none'}" stroke="${o.c||'var(--text)'}" stroke-width="${o.w||2}"`+
+         ` stroke-linejoin="round"/>`;
+}
+function dot(x,y,r){return`<circle cx="${+x.toFixed(1)}" cy="${+y.toFixed(1)}" r="${r||3.5}" fill="var(--text)"/>`;}
+const FILL='rgba(45,106,79,0.08)';
+const FILL2='rgba(45,106,79,0.16)';
+
+// ═══════════════════════════════════════════════════════
+//  TASK / PART CONSTRUCTORS
+// ═══════════════════════════════════════════════════════
+// part kinds:  num | frac | text | set | choice
+function P(lbl,q,ans,o){
+  o=o||{};
+  return{lbl,q,ans:String(ans),unit:o.unit||'',kind:o.kind||'num',
+         choices:o.choices||null,accept:o.accept||null,ansN:o.ansN,ansD:o.ansD,
+         ph:o.ph||null,why:o.why||null};
+}
+// stacked fraction for both screen and print
+function frac(n,d){
+  return`<span style="display:inline-flex;flex-direction:column;vertical-align:middle;`+
+        `text-align:center;line-height:1.15;font-size:.82em">`+
+        `<span style="border-bottom:1px solid currentColor;padding:0 .3em">${n}</span>`+
+        `<span style="padding:0 .3em">${d}</span></span>`;
+}
+function Pfrac(lbl,q,n,d,o){
+  o=Object.assign({},o||{});
+  const r=reduceFrac(n,d);
+  o.kind='frac';o.ansN=n;o.ansD=d;o.ph=o.ph||'pl. 3/4';
+  return P(lbl,q,fmtFrac(r.n,r.d),o);
+}
+function TASK(group,topic,intro,parts,o){
+  o=o||{};
+  return{group,topic,intro:intro||'',parts,viz:o.viz||null,table:o.table||null,note:o.note||null};
+}
+
+// ── answer checking ───────────────────────────────────
+function checkPart(part,raw){
+  const s=String(raw==null?'':raw).trim();
+  if(!s)return{ok:false,empty:true};
+  if(part.kind==='choice')return{ok:normText(s)===normText(part.ans)};
+  if(part.kind==='frac'){
+    const r=checkFracAnswer(s,part.ansN,part.ansD);
+    return{ok:r!=='wrong',loose:r==='unsimplified'};
+  }
+  if(part.kind==='set'){
+    const u=splitSet(s),a=splitSet(part.ans);
+    const su=new Set(u),sa=new Set(a);
+    if(su.size!==sa.size)return{ok:false};
+    for(const v of sa)if(!su.has(v))return{ok:false};
+    return{ok:true};
+  }
+  if(part.kind==='text'){
+    const u=normText(s);
+    if(u===normText(part.ans))return{ok:true};
+    return{ok:(part.accept||[]).some(a=>u===normText(a))};
+  }
+  const uv=parseNum(s),cv=parseNum(part.ans);
+  if(!isFinite(uv))return{ok:(part.accept||[]).some(a=>normText(s)===normText(a))};
+  return{ok:Math.abs(uv-cv)<1e-9};
+}
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let activeGroups=new Set(GROUPS.map(g=>g.id));
+let mode='gyak';
+let tasks=[],tIdx=0,answers=[],results=[],checked=false;
+let timerId=null,deadline=0;
+
+function activeGroupList(){return GROUPS.filter(g=>activeGroups.has(g.id))}
+function totalPoints(){return tasks.reduce((s,t)=>s+t.parts.length,0)}
+function earnedPoints(){return results.reduce((s,r)=>s+(r?r.filter(x=>x&&x.ok).length:0),0)}
+
+// ─── settings render ──────────────────────────────────
+function renderGroups(){
+  const list=document.getElementById('group-list');
+  list.innerHTML='';
+  for(const g of GROUPS){
+    const on=activeGroups.has(g.id);
+    const b=document.createElement('button');
+    b.className='row-btn'+(on?' on':'');
+    b.innerHTML=`<div><div class="row-title">${g.name}</div><div class="row-sub">${g.sub}</div></div>`+
+                `<span class="row-check">${on?'✓':''}</span>`;
+    b.onclick=()=>toggleGroup(g.id);
+    list.appendChild(b);
+  }
+  const dis=activeGroups.size===0;
+  document.getElementById('start-btn').disabled=dis;
+  const pb=document.getElementById('print-btn');
+  if(pb)pb.disabled=dis;
+}
+function toggleGroup(id){
+  if(activeGroups.has(id)){if(activeGroups.size>1)activeGroups.delete(id);}
+  else activeGroups.add(id);
+  renderGroups();
+}
+function setMode(m){
+  mode=m;
+  document.getElementById('mode-gyak').classList.toggle('on',m==='gyak');
+  document.getElementById('mode-eles').classList.toggle('on',m==='eles');
+  document.getElementById('mode-note').textContent = m==='eles'
+    ? 'Mind a 10 feladat egyben, 45 perces visszaszámlálóval, javítás nélkül – az eredményt a végén kapod meg. Pontosan úgy, mint az éles vizsgán.'
+    : 'Feladatonként ellenőrizhetsz, és rögtön látod a helyes megoldást. Csak a bekapcsolt feladattípusok kerülnek be.';
+  if(m==='eles')activeGroups=new Set(GROUPS.map(g=>g.id));
+  renderGroups();
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ═══════════════════════════════════════════════════════
+//  EXAM BUILD
+// ═══════════════════════════════════════════════════════
+function buildExam(groupsSet){
+  const gs=GROUPS.filter(g=>groupsSet.has(g.id));
+  const out=[];
+  gs.forEach((g,i)=>{
+    let t=null;
+    for(let tries=0;tries<25&&!t;tries++){
+      try{t=TASKGEN[g.id]();}catch(e){t=null;}
+    }
+    if(!t)return;
+    t.no=out.length+1;
+    t.topic=t.topic||g.name;
+    out.push(t);
+  });
+  return out;
+}
+
+// ═══════════════════════════════════════════════════════
+//  QUIZ FLOW
+// ═══════════════════════════════════════════════════════
+function startQuiz(){
+  // Fresh entropy per run — otherwise every visitor gets the same paper.
+  _seed=((Math.random()*0xFFFFFFFF)|0)||1;
+  const gs = mode==='eles' ? new Set(GROUPS.map(g=>g.id)) : activeGroups;
+  tasks=buildExam(gs);
+  if(!tasks.length)return;
+  tIdx=0;answers=tasks.map(t=>t.parts.map(()=>''));results=tasks.map(()=>null);checked=false;
+  showScreen('quiz');
+  if(mode==='eles')startTimer(45*60);else stopTimer();
+  renderTask();
+}
+
+function startTimer(sec){
+  stopTimer();
+  deadline=Date.now()+sec*1000;
+  document.getElementById('timer-row').style.display='flex';
+  tickTimer();
+  timerId=setInterval(tickTimer,1000);
+}
+function stopTimer(){
+  if(timerId){clearInterval(timerId);timerId=null;}
+  document.getElementById('timer-row').style.display='none';
+}
+function tickTimer(){
+  const left=Math.max(0,Math.round((deadline-Date.now())/1000));
+  const el=document.getElementById('timer');
+  el.textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;
+  el.classList.toggle('low',left<=300);
+  if(left<=0)finishExam();
+}
+
+function renderTask(){
+  checked=false;
+  const t=tasks[tIdx];
+  document.getElementById('prog-fill').style.width=(tIdx/tasks.length*100)+'%';
+  document.getElementById('prog-label').textContent=`${tIdx+1}/${tasks.length}`;
+
+  let h=`<div class="task-head"><span class="task-no">${t.no}. feladat</span>`+
+        `<span class="task-topic">${t.parts.length} pont</span></div>`;
+  if(t.intro)h+=`<div class="task-intro">${t.intro}</div>`;
+  if(t.table)h+=t.table;
+  if(t.viz)h+=`<div class="task-viz">${t.viz}</div>`;
+
+  t.parts.forEach((p,i)=>{
+    h+=`<div class="part"><div class="part-q"><span class="part-lbl">${p.lbl}</span><span>${p.q}</span></div>`;
+    if(p.kind==='choice'){
+      h+=`<div class="chips" id="chips-${i}">`+
+         p.choices.map(c=>`<button class="chip" data-p="${i}" data-v="${c.replace(/"/g,'&quot;')}" onclick="pickChip(${i},this)">${c}</button>`).join('')+
+         `</div>`;
+    }else{
+      h+=`<div class="part-in"><input id="in-${i}" type="text" `+
+         `inputmode="${p.kind==='num'?'decimal':'text'}" autocomplete="off" `+
+         `placeholder="${p.ph||'Válasz…'}" oninput="answers[tIdx][${i}]=this.value" `+
+         `onkeydown="if(event.key==='Enter')focusNext(${i})"/>`+
+         (p.unit?`<span class="part-unit">${p.unit}</span>`:'')+`</div>`;
+    }
+    h+=`<div class="verdict" id="vd-${i}" style="display:none"></div></div>`;
+  });
+  document.getElementById('task-card').innerHTML=h;
+
+  // restore previously typed answers (going back is not offered, but the
+  // exam-mode finish re-reads them, so keep the DOM and state in sync)
+  t.parts.forEach((p,i)=>{
+    const v=answers[tIdx][i];
+    if(p.kind==='choice'){
+      if(v)document.querySelectorAll(`#chips-${i} .chip`).forEach(c=>c.classList.toggle('on',c.dataset.v===v));
+    }else{
+      const el=document.getElementById('in-'+i);if(el)el.value=v||'';
+    }
+  });
+
+  const isLast=tIdx>=tasks.length-1;
+  const chk=document.getElementById('check-btn'),nxt=document.getElementById('next-btn');
+  if(mode==='eles'){
+    chk.style.display='none';
+    nxt.style.display='';
+    nxt.textContent=isLast?'Beadom →':'Következő feladat →';
+    nxt.onclick=isLast?finishExam:nextTask;
+  }else{
+    chk.style.display='';chk.textContent='Ellenőrzés';
+    nxt.style.display='none';
+    nxt.onclick=nextTask;
+  }
+  document.getElementById('score-mini').textContent =
+    mode==='eles'?'':`${earnedPoints()} pont / ${tasks.slice(0,tIdx).reduce((s,x)=>s+x.parts.length,0)} eddigi`;
+}
+
+function pickChip(i,btn){
+  document.querySelectorAll(`#chips-${i} .chip`).forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  answers[tIdx][i]=btn.dataset.v;
+}
+function focusNext(i){
+  const el=document.getElementById('in-'+(i+1));
+  if(el)el.focus();else if(mode==='gyak')submitTask();else nextTask();
+}
+
+function submitTask(){
+  if(checked)return;
+  checked=true;
+  const t=tasks[tIdx];
+  const res=t.parts.map((p,i)=>checkPart(p,answers[tIdx][i]));
+  results[tIdx]=res;
+
+  t.parts.forEach((p,i)=>{
+    const vd=document.getElementById('vd-'+i);
+    const r=res[i];
+    vd.style.display='flex';
+    vd.className='verdict '+(r.ok?'ok':'err');
+    const shown=p.ans+(p.unit?' '+p.unit:'');
+    if(r.ok&&r.loose)vd.innerHTML=`<span>✓</span><span>Helyes! Egyszerűsítve: <b>${shown}</b></span>`;
+    else if(r.ok)vd.innerHTML=`<span>✓</span><span>Helyes${p.why?' – '+p.why:''}</span>`;
+    else vd.innerHTML=`<span>✗</span><span>Helyes válasz: <b>${shown}</b>${p.why?' – '+p.why:''}</span>`;
+    if(p.kind==='choice'){
+      document.querySelectorAll(`#chips-${i} .chip`).forEach(c=>{c.disabled=true;});
+    }else{
+      const el=document.getElementById('in-'+i);if(el)el.disabled=true;
+    }
+  });
+
+  document.getElementById('check-btn').style.display='none';
+  const nxt=document.getElementById('next-btn');
+  nxt.style.display='';
+  nxt.textContent=tIdx>=tasks.length-1?'Eredmény →':'Következő feladat →';
+  nxt.onclick=nextTask;
+  document.getElementById('score-mini').textContent=
+    `${earnedPoints()} pont / ${tasks.slice(0,tIdx+1).reduce((s,x)=>s+x.parts.length,0)} eddigi`;
+}
+
+function nextTask(){
+  if(mode==='gyak'&&!checked){submitTask();return;}
+  tIdx++;
+  if(tIdx>=tasks.length){showResult();return;}
+  renderTask();
+}
+
+function finishExam(){
+  stopTimer();
+  tasks.forEach((t,ti)=>{
+    if(!results[ti])results[ti]=t.parts.map((p,i)=>checkPart(p,answers[ti][i]));
+  });
+  showResult();
+}
+
+function showResult(){
+  stopTimer();
+  const tot=totalPoints(),got=earnedPoints();
+  const pct=tot?Math.round(got/tot*100):0;
+  document.getElementById('result-medal').textContent=pct>=90?'🥇':pct>=70?'🥈':pct>=50?'🥉':'💪';
+  document.getElementById('result-score').textContent=`${got} / ${tot} pont`;
+  document.getElementById('result-pct').textContent=`${pct}% – ${
+    pct>=90?'kiváló felvételi teljesítmény':pct>=70?'jó úton haladsz':pct>=50?'van még mit gyakorolni':'nézd át a megoldásokat'}`;
+
+  const bd=document.getElementById('result-breakdown');
+  bd.innerHTML=tasks.map((t,i)=>{
+    const g=results[i]?results[i].filter(x=>x&&x.ok).length:0;
+    return`<div class="bd-row"><span class="bd-pts" style="color:var(--muted)">${t.no}.</span>`+
+          `<span class="bd-name">${t.topic}</span>`+
+          `<span class="bd-pts" style="color:${g===t.parts.length?'var(--ok)':g?'var(--text)':'var(--err)'}">${g}/${t.parts.length}</span></div>`;
+  }).join('');
+
+  // In exam mode the user never saw the solutions — show them here.
+  const key=document.getElementById('result-key');
+  if(mode==='eles'){
+    key.style.display='block';
+    key.innerHTML=`<div style="font-weight:600;margin-bottom:6px;font-size:13px;color:var(--muted);letter-spacing:.05em">MEGOLDÁSOK</div>`+
+      answerKeyHtml(tasks);
+  }else key.style.display='none';
+
+  showScreen('result');
+}
+
+function answerKeyHtml(qs){
+  return qs.map(t=>
+    `<div style="margin-bottom:5px"><span style="color:var(--muted)">${t.no}.</span> `+
+    t.parts.map(p=>`<b>${p.lbl})</b> ${p.ans}${p.unit?' '+p.unit:''}`).join(' &nbsp;·&nbsp; ')+
+    `</div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  PRINT — official-style felvételi paper
+// ═══════════════════════════════════════════════════════
+function printWorksheet(){
+  const seed16=(Math.random()*1048576)|0||1;
+  _seed=seed16;
+  const gs = mode==='eles' ? new Set(GROUPS.map(g=>g.id)) : activeGroups;
+  const code=encodeWorksheetCode(seed16,gs);
+  const qs=buildExam(gs);
+  const pts=qs.reduce((s,t)=>s+t.parts.length,0);
+
+  const area=document.getElementById('print-area');
+  let h=`<div class="print-exam">
+    <div class="ex-cover">
+      <div class="ex-org">MATEMATIKA FELADATLAP</div>
+      <div class="ex-title">KÖZPONTI FELVÉTELI</div>
+      <div class="ex-title" style="font-size:14pt;font-weight:500;letter-spacing:0">gyakorló feladatsor</div>
+      <div class="ex-for">${EXAM_META.forWhom}</div>
+      <div class="ex-when">Időtartam: 45 perc &nbsp;·&nbsp; ${pts} pont</div>
+      <div class="ex-dur" style="font-family:monospace">🔑 ${code}</div>
+      <div class="ex-name">NÉV: _______________________________________</div>
+      <div class="ex-birth">SZÜLETÉSI ÉV: <span></span> HÓ: <span></span> NAP: <span></span></div>
+      <div class="ex-info">
+        <div class="ex-info-t">Fontos tudnivalók</div>
+        Tollal dolgozz! Zsebszámológépet nem használhatsz!<br>
+        A feladatokat tetszés szerinti sorrendben oldhatod meg.<br>
+        Minden próbálkozást, mellékszámítást a feladatlapon végezz!<br>
+        Ha megoldásod ellenőrzésekor észreveszed, hogy hibáztál,
+        a végső választ egyértelműen jelöld meg, a hibásat húzd át!<br>
+        Jó munkát kívánunk!
+      </div>
+      <div class="ex-foot">GYAKORLÓ ÍRÁSBELI FELADATSOR</div>
+    </div>`;
+
+  qs.forEach(t=>{
+    h+=`<div class="ex-task"><div class="ex-no">${t.no}.</div><div class="ex-body">`;
+    if(t.intro)h+=`<div class="ex-intro">${t.intro}</div>`;
+    if(t.table)h+=t.table;
+    if(t.viz)h+=`<div class="ex-viz">${t.viz}</div>`;
+    t.parts.forEach(p=>{
+      h+=`<div class="ex-part"><span class="ex-part-l">${p.lbl})</span><span>${p.q}</span></div>`;
+      if(p.kind==='choice'){
+        h+=`<div class="ex-ans" style="margin-left:.8cm">${p.choices.map(c=>`(${c})`).join(' &nbsp; ')}</div>`;
+      }else{
+        h+=`<div class="ex-ans" style="margin-left:.8cm"><span class="ex-dots"></span>`+
+           (p.unit?`<span>${p.unit}</span>`:'')+`</div>`;
+      }
+    });
+    h+=`</div><div class="ex-pts">`+t.parts.map(p=>`<div>${p.lbl}</div>`).join('')+`</div></div>`;
+  });
+  h+=`<div style="text-align:center;font-size:10pt;margin-top:.6cm;color:#666">
+        A megoldókulcs a ${code} kóddal kérhető le a feladatlap oldalán.</div></div>`;
+  area.innerHTML=h;
+
+  const now=new Date();
+  const stamp=`${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}-${String(now.getMinutes()).padStart(2,'0')}`;
+  const orig=document.title;
+  document.title=`Felveteli_${EXAM_META.slug}_${stamp}`;
+  setTimeout(()=>{window.print();document.title=orig;},300);
+}
+
+// ─── answer key from code ─────────────────────────────
+function solveFromCode(){
+  const inp=document.getElementById('code-input');
+  const box=document.getElementById('answer-key');
+  const decoded=decodeWorksheetCode(inp.value);
+  if(!decoded){
+    box.style.display='block';
+    box.innerHTML='<span style="color:var(--err)">Érvénytelen kód. Formátum: A3F7B-3FF</span>';
+    return;
+  }
+  _seed=decoded.seed;
+  const qs=buildExam(decoded.groups);
+  box.style.display='block';
+  box.innerHTML=`<div style="font-weight:600;margin-bottom:6px;font-size:13px;color:var(--muted);letter-spacing:.05em">MEGOLDÁSOK — ${inp.value.toUpperCase()}</div>`+
+                answerKeyHtml(qs);
+}
+
+// ─── keyboard detection ───────────────────────────────
+if(window.visualViewport){
+  const chk=()=>document.body.classList.toggle('kb',
+    window.visualViewport.height/window.screen.height<0.65);
+  window.visualViewport.addEventListener('resize',chk);chk();
+}
+
+// ─── init ─────────────────────────────────────────────
+setMode('gyak');
+
+</script>
+<script data-goatcounter="https://matekf8.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
