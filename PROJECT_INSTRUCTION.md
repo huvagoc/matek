@@ -9,6 +9,28 @@ This project provides browser-based, offline-capable mathematics quiz applicatio
 
 All twelve grade files plus the two érettségi files follow the same single-file architecture and conventions described below.
 
+## Current state (2026-07) — read this first
+
+The rest of this file is partially stale; this section is authoritative where they conflict.
+
+- The repo also contains **`felveteli6.html`** and **`felveteli8.html`** (központi írásbeli
+  felvételi, 6./8. évfolyam), which the sections below do not yet mention.
+- There are two intended page archetypes:
+  1. **Interactive drill quiz** — `grade3.html` … `grade12.html`.
+  2. **Printable *próbafeladatlap* generator** — the four exam tracks (`felveteli6`,
+     `felveteli8`, `kozepszint`, `emelt`): pick settings, print an OH-style paper plus a
+     separately printable answer key; no on-screen quiz.
+- `felveteli6/8.html` are being converted to archetype 2 now (this branch).
+- `kozepszint.html` and `emelt.html` are **still archetype 1** and have not been converted.
+  This is known, tracked, and deferred to a later pass — do not "fix" it in passing.
+- **`examples/`** holds real Oktatási Hivatal papers (M6/M8 felvételi 2025–2026, K2613, E2513)
+  and is the authoritative reference for print layout. The PDFs are deliberately untracked
+  (size + third-party material); re-download from oktatas.hu if missing.
+- Worksheet codes: felvételi pages and grade9 use a **3-digit hex mask** (`XXXXX-YYY`); on the
+  felvételi pages mask bit 10 (`0x400`) selects the booklet (0 = Mat1, 1 = Mat2), and the
+  booklet is mixed into the effective PRNG seed so Mat1/Mat2 papers differ for the same seed.
+  2-digit masks remain accepted (legacy codes, Mat1).
+
 ## Technical Architecture
 
 - **Vanilla Stack**: Everything is written in raw HTML, CSS, and JavaScript. No frameworks (React, Vue, etc.), no compilation/build steps, no `npm`, and no external assets (other than optional system fonts and GoatCounter web analytics).

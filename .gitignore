@@ -2,3 +2,7 @@
 .agents/
 .gemini/
 *.local
+
+# Real OH exam papers (layout ground truth) — untracked: size + third-party material.
+# Re-download from oktatas.hu if missing. See PROJECT_INSTRUCTION.md "Current state".
+examples/
