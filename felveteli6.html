@@ -441,10 +441,35 @@ const GROUPS=[
 //  1. MŰVELETSOROK
 // ═══════════════════════════════════════════════════════
 const DIGSFX=['-ás','-es','-es','-as','-es','-ös','-os','-es','-as','-es'];
-function ds(d){return String(d)+DIGSFX[+d]}
+function ds(d){return String(d)+DIGSFX[+String(d).slice(-1)]}
 const VOW='aáeéiíoóöőuúüűAÁEÉIÍOÓÖŐUÚÜŰ';
 function art(w){return VOW.includes(String(w)[0])?'az':'a'}
 function sgn(n){return n<0?`–${Math.abs(n)}`:`${n}`}
+
+// ── number-suffix helpers ─────────────────────────────
+// A magyar toldalék hangrendjét a szám kimondott alakjának utolsó nem nulla
+// tagja dönti el: utolsó számjegy, különben a tízes (20, 30, …), különben
+// száz/ezer/millió. A táblázatok kulcsa ez az utolsó tag.
+function _sfxPart(n){n=Math.abs(Math.round(n));if(!n)return 0;
+  if(n%10)return n%10;if(n%100)return 10*Math.floor((n%100)/10);
+  if(n%1000)return 100;if(n%1e6)return 1000;return 1e6;}
+function _sfx(n,t){return t[_sfxPart(n)]}
+const T_SZOR={0:'-szor',1:'-szer',2:'-szer',3:'-szor',4:'-szer',5:'-ször',6:'-szor',7:'-szer',8:'-szor',9:'-szer',
+  10:'-szer',20:'-szor',30:'-szor',40:'-szer',50:'-szer',60:'-szor',70:'-szer',80:'-szor',90:'-szer',
+  100:'-szor',1000:'-szer',1000000:'-szor'};
+const T_AN={0:'-an',1:'-en',2:'-en',3:'-an',4:'-en',5:'-en',6:'-an',7:'-en',8:'-an',9:'-en',
+  10:'-en',20:'-an',30:'-an',40:'-en',50:'-en',60:'-an',70:'-en',80:'-an',90:'-en',
+  100:'-an',1000:'-en',1000000:'-an'};
+const T_NAL={0:'-nál',1:'-nél',2:'-nél',3:'-nál',4:'-nél',5:'-nél',6:'-nál',7:'-nél',8:'-nál',9:'-nél',
+  10:'-nél',20:'-nál',30:'-nál',40:'-nél',50:'-nél',60:'-nál',70:'-nél',80:'-nál',90:'-nél',
+  100:'-nál',1000:'-nél',1000000:'-nál'};
+const T_DAL={0:'-dal',1:'-del',2:'-del',3:'-dal',4:'-del',5:'-del',6:'-dal',7:'-del',8:'-dal',9:'-del',
+  10:'-del',20:'-dal',30:'-dal',40:'-del',50:'-del',60:'-dal',70:'-del',80:'-dal',90:'-del',
+  100:'-dal',1000:'-del',1000000:'-dal'};
+function sfxSzor(n){return _sfx(n,T_SZOR)}   // 3-szor, 4-szer, 5-ször
+function sfxAn(n){return _sfx(n,T_AN)}       // 240-en, 100-an (ennyien voltak)
+function sfxNal(n){return _sfx(n,T_NAL)}     // 3-nál, 4-nél; törtre: nevezővel hívd (harmadnál)
+function sfxDal(n){return _sfx(n,T_DAL)}     // törtre: nevezővel hívd (hatoddal, negyeddel)
 
 function genMuvelet(){
   const parts=[];
@@ -658,11 +683,11 @@ function genSzamjegy(){
     const big=under[under.length-1],small=over[0],bl=below[below.length-1];
     const show=([n,d])=>`${n}/${d}`;
     const parts=[
-      P('a',`Sorold fel azokat a felírt törteket, amelyek egyenlők ${frac(tgt[0]*2,tgt[1]*2)}-del!`,
+      P('a',`Sorold fel azokat a felírt törteket, amelyek egyenlők ${frac(tgt[0]*2,tgt[1]*2)}${sfxDal(tgt[1]*2)}!`,
         eq.join(', '),{kind:'set',ph:'pl. 2/3, 4/6'}),
       P('b',`Melyik a legnagyobb olyan tört a lapon, amelyik 1-nél kisebb?`,show(big),{kind:'text'}),
       P('c',`Melyik a legkisebb olyan tört a lapon, amelyik 1-nél nagyobb?`,show(small),{kind:'text'}),
-      P('d',`Melyik a legnagyobb olyan tört a lapon, amelyik ${frac(lim[0],lim[1])}-nél kisebb?`,
+      P('d',`Melyik a legnagyobb olyan tört a lapon, amelyik ${frac(lim[0],lim[1])}${sfxNal(lim[1])} kisebb?`,
         show(bl),{kind:'text'}),
     ];
     return TASK('szamjegy','Egyjegyű törtek',
@@ -876,7 +901,7 @@ function genReszEgesz(){
   ];
   return TASK('reszegesz','Békekonferencia',
     `Az egerek és a macskák békekonferenciáján csak egerek és macskák vesznek részt. `+
-    `A konferencia 1. napján összesen <b>${tot}-an</b> voltak, ${m}-ször annyi egér, mint macska. `+
+    `A konferencia 1. napján összesen <b>${tot}${sfxAn(tot)}</b> voltak, ${m}${sfxSzor(m)} annyi egér, mint macska. `+
     `A részt vevő macskák átlagéletkora ${ac} év, az egereké ${am} év volt.<br>`+
     `Az 1. nap estéjén ${left} egér hazament, és érkezett néhány macska. Így a 2. napon `+
     `feleannyi macska vett részt, mint egér.`,parts);

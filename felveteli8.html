@@ -443,6 +443,31 @@ const VOWL='aáeéiíoóöőuúüűAÁEÉIÍOÓÖŐUÚÜŰ';
 function art(w){return VOWL.includes(String(w)[0])?'az':'a'}
 function pt(x,y){return`(${x}; ${y})`}
 
+// ── number-suffix helpers ─────────────────────────────
+// A magyar toldalék hangrendjét a szám kimondott alakjának utolsó nem nulla
+// tagja dönti el: utolsó számjegy, különben a tízes (20, 30, …), különben
+// száz/ezer/millió. A táblázatok kulcsa ez az utolsó tag.
+function _sfxPart(n){n=Math.abs(Math.round(n));if(!n)return 0;
+  if(n%10)return n%10;if(n%100)return 10*Math.floor((n%100)/10);
+  if(n%1000)return 100;if(n%1e6)return 1000;return 1e6;}
+function _sfx(n,t){return t[_sfxPart(n)]}
+const T_SZOR={0:'-szor',1:'-szer',2:'-szer',3:'-szor',4:'-szer',5:'-ször',6:'-szor',7:'-szer',8:'-szor',9:'-szer',
+  10:'-szer',20:'-szor',30:'-szor',40:'-szer',50:'-szer',60:'-szor',70:'-szer',80:'-szor',90:'-szer',
+  100:'-szor',1000:'-szer',1000000:'-szor'};
+const T_AN={0:'-an',1:'-en',2:'-en',3:'-an',4:'-en',5:'-en',6:'-an',7:'-en',8:'-an',9:'-en',
+  10:'-en',20:'-an',30:'-an',40:'-en',50:'-en',60:'-an',70:'-en',80:'-an',90:'-en',
+  100:'-an',1000:'-en',1000000:'-an'};
+const T_NAL={0:'-nál',1:'-nél',2:'-nél',3:'-nál',4:'-nél',5:'-nél',6:'-nál',7:'-nél',8:'-nál',9:'-nél',
+  10:'-nél',20:'-nál',30:'-nál',40:'-nél',50:'-nél',60:'-nál',70:'-nél',80:'-nál',90:'-nél',
+  100:'-nál',1000:'-nél',1000000:'-nál'};
+const T_DAL={0:'-dal',1:'-del',2:'-del',3:'-dal',4:'-del',5:'-del',6:'-dal',7:'-del',8:'-dal',9:'-del',
+  10:'-del',20:'-dal',30:'-dal',40:'-del',50:'-del',60:'-dal',70:'-del',80:'-dal',90:'-del',
+  100:'-dal',1000:'-del',1000000:'-dal'};
+function sfxSzor(n){return _sfx(n,T_SZOR)}   // 3-szor, 4-szer, 5-ször
+function sfxAn(n){return _sfx(n,T_AN)}       // 240-en, 100-an (ennyien voltak)
+function sfxNal(n){return _sfx(n,T_NAL)}     // 3-nál, 4-nél; törtre: nevezővel hívd (harmadnál)
+function sfxDal(n){return _sfx(n,T_DAL)}     // törtre: nevezővel hívd (hatoddal, negyeddel)
+
 // ═══════════════════════════════════════════════════════
 //  1. A, B, C, D, E ÉRTÉKE
 // ═══════════════════════════════════════════════════════
@@ -554,7 +579,7 @@ function genStatiszt(){
     P('b',`Mennyi az osztályzatok módusza?`,mode),
     P('c',`Mennyi az osztályzatok mediánja?`,hf(med)),
     P('d',`Mennyi az osztályzatok átlaga két tizedesjegyre kerekítve?`,hf(avg)),
-    P('e',`Hány tanuló ért el ${lim}-nél jobb eredményt?`,over,{unit:'fő'}),
+    P('e',`Hány tanuló ért el ${lim}${sfxNal(lim)} jobb eredményt?`,over,{unit:'fő'}),
   ];
   return TASK('statiszt','Dolgozateredmények',
     `Egy osztály matematikadolgozatának eredményeit az alábbi oszlopdiagram mutatja. `+
@@ -622,7 +647,7 @@ function genEgyenlet(){
     ];
     return TASK('egyenlet','Zsinór három darabban',
       `Egy <b>${L} cm</b> hosszú zsinórt három darabra vágtunk. A második darab `+
-      `<b>${k} cm-rel</b> hosszabb az elsőnél, a harmadik darab pedig <b>${m}-szer</b> `+
+      `<b>${k} cm-rel</b> hosszabb az elsőnél, a harmadik darab pedig <b>${m}${sfxSzor(m)}</b> `+
       `olyan hosszú, mint a második. Írj fel egyenletet, és oldd meg!`,parts);
   }
   // ── munkabér ──
@@ -783,7 +808,7 @@ function genEletkor(){
     ];
     return TASK('eletkor','Életkorok',
       `${nev} <b>${d} évvel</b> idősebb az unokaöccsénél. <b>${X} évvel ezelőtt</b> `+
-      `${nev} pontosan <b>${k}-szer</b> annyi idős volt, mint az unokaöccse.`,parts);
+      `${nev} pontosan <b>${k}${sfxSzor(k)}</b> annyi idős volt, mint az unokaöccse.`,parts);
   }
   // ── arányos osztás ──
   const [r1,r2,r3]=pickN([2,3,4,5,6,7,9],3).sort((a,b)=>a-b);
