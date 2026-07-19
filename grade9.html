@@ -764,7 +764,7 @@ function makeConv(cats,dj,goUp,dec){
 // ═══════════════════════════════════════════════════════
 const WN=['Pista','Kati','Bence','Anna','Péter','Zsuzsi','Dani','Lili','Ádám','Réka','Márton','Eszter'];
 function wn(){return randChoice(WN)}
-function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
+function hf(n){if(typeof n==='number'&&isFinite(n))n=Math.round(n*1e6)/1e6;return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 
 const FRAC_SUBJ={2:'fele',3:'harmada',4:'negyede',5:'ötöde'};
 const FRAC_ACC ={2:'felét',3:'harmadát',4:'negyedét',5:'ötödét'};

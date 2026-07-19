@@ -763,7 +763,7 @@ function makeConv(cats,dj,goUp,dec){
 // ═══════════════════════════════════════════════════════
 const WN=['Pista','Kati','Bence','Anna','Péter','Zsuzsi','Dani','Lili','Ádám','Réka','Márton','Eszter'];
 function wn(){return randChoice(WN)}
-function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
+function hf(n){if(typeof n==='number'&&isFinite(n))n=Math.round(n*1e6)/1e6;return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 
 // 10. osztály: a szöveges feladatok e file saját témaköreire épülnek
 // (másodfokú egyenlet a fő hangsúly — NAT 2020 gimnáziumi kerettanterv szerint).

@@ -1015,7 +1015,7 @@ function niceStr(v){
   return String(r).replace('.',',');
 }
 function parseNum(s){return parseFloat(String(s).trim().replace(',','.'))}
-function hf(n){return Number.isInteger(n)?String(n):String(n).replace('.',',')}
+function hf(n){if(typeof n==='number'&&isFinite(n))n=Math.round(n*1e6)/1e6;return Number.isInteger(n)?String(n):String(n).replace('.',',')}
 
 // ── fraction helpers ──────────────────────────────────
 function gcd(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a;}
